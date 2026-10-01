@@ -76,10 +76,26 @@
     return v.toLocaleString("id-ID");
   }
 
-  function fmtDate(iso) {
-    var parts = String(iso || "").split("T")[0].split("-");
-    if (parts.length !== 3) return String(iso || "");
-    return parts[2] + "/" + parts[1] + "/" + parts[0];
+  function pad2(n) {
+    return ("0" + n).slice(-2);
+  }
+
+  // Samakan semua nilai tanggal ke yyyy-MM-dd lokal, termasuk data lama berupa ISO UTC.
+  function toDateISO(value) {
+    var s = String(value || "");
+    if (!s) return "";
+    if (s.indexOf("T") !== -1) {
+      var d = new Date(s);
+      if (isNaN(d.getTime())) return s;
+      return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+    }
+    return s.slice(0, 10);
+  }
+
+  function fmtDate(value) {
+    var p = String(value || "").split("-");
+    if (p.length !== 3) return String(value || "-");
+    return p[2] + "/" + p[1] + "/" + p[0];
   }
 
   // Jam yang terlanjur tersimpan sebagai objek tanggal (data lama) dikembalikan ke HH:mm.
@@ -104,7 +120,7 @@
     return {
       id: r.id || uid(),
       timestamp: r.timestamp || "",
-      tanggal: String(r.tanggal || "").split("T")[0],
+      tanggal: toDateISO(r.tanggal),
       nama: String(r.nama || "").trim(),
       jumlah_line: numOrNull(r.jumlah_line) || 0,
       d1_mulai: d1_mulai,
