@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rekap Durasi Kerja</title>
+<meta name="description" content="Pencatatan dan rekap durasi kerja per orang untuk dua proses: draft PO sampai selesai migrasi, dan proses PO reserved CO sampai selesai picklist.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23c2410c'/%3E%3Crect x='7' y='9' width='3' height='14' fill='white'/%3E%3Crect x='13' y='9' width='12' height='3' fill='white'/%3E%3Crect x='13' y='15' width='9' height='3' fill='white'/%3E%3Crect x='13' y='21' width='6' height='2.5' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">RDK</span>
+      <div class="brand-text">
+        <h1>Rekap Durasi Kerja</h1>
+        <p class="brand-sub">Catat durasi per orang untuk dua proses produksi</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="conn" title="Sumber penyimpanan data">
+        <span id="connDot" class="conn-dot" data-state="loading" aria-hidden="true"></span>
+        <span id="connText">Menyiapkan...</span>
+      </span>
+      <button id="themeToggle" class="btn btn-ghost" type="button" aria-pressed="false">Mode gelap</button>
+    </div>
+  </div>
+  <div class="rule" aria-hidden="true"></div>
+</header>
+
+<main class="wrap">
+
+  <section class="card" aria-labelledby="formTitle">
+    <div class="section-head">
+      <h2 id="formTitle">Input durasi</h2>
+      <p>Isi nama, jumlah line, lalu jam mulai dan jam selesai tiap proses. Durasi dihitung otomatis dari selisih jam.</p>
+    </div>
+
+    <form id="entryForm" class="form" novalidate>
+      <div class="grid-3">
+        <div class="field">
+          <label for="nama">Nama</label>
+          <input id="nama" name="nama" type="text" list="namaList" autocomplete="off" placeholder="Nama penginput" required>
+          <datalist id="namaList"></datalist>
+        </div>
+        <div class="field">
+          <label for="jumlah_line">Jumlah line</label>
+          <input id="jumlah_line" name="jumlah_line" type="number" min="0" step="1" inputmode="numeric" placeholder="0" required>
+        </div>
+        <div class="field">
+          <label for="tanggal">Tanggal</label>
+          <input id="tanggal" name="tanggal" type="date" required>
+        </div>
+      </div>
+
+      <div class="proses-table">
+        <div class="proses-head" aria-hidden="true">
+          <span class="col-name">Proses</span>
+          <span class="col-jam">Jam mulai</span>
+          <span class="col-jam">Jam selesai</span>
+          <span class="col-dur">Durasi</span>
+        </div>
+
+        <div class="proses-row">
+          <span class="col-name proses-name">Proses 1 &middot; Draft PO sampai selesai migrasi</span>
+          <input id="d1_mulai" name="d1_mulai" type="time" aria-label="Jam mulai proses 1, draft PO sampai selesai migrasi">
+          <input id="d1_selesai" name="d1_selesai" type="time" aria-label="Jam selesai proses 1, draft PO sampai selesai migrasi">
+          <output id="d1_dur" class="dur-out" aria-label="Durasi proses 1">-</output>
+        </div>
+
+        <div class="proses-row">
+          <span class="col-name proses-name">Proses 2 &middot; PO reserved CO sampai selesai picklist</span>
+          <input id="d2_mulai" name="d2_mulai" type="time" aria-label="Jam mulai proses 2, PO reserved CO sampai selesai picklist">
+          <input id="d2_selesai" name="d2_selesai" type="time" aria-label="Jam selesai proses 2, PO reserved CO sampai selesai picklist">
+          <output id="d2_dur" class="dur-out" aria-label="Durasi proses 2">-</output>
+        </div>
+      </div>
+
+      <p id="formError" class="form-error" role="alert" hidden></p>
+
+      <div class="form-foot">
+        <span class="total-preview">Total durasi: <strong id="totalPreview">-</strong></span>
+        <div class="form-btns">
+          <button type="reset" class="btn btn-ghost">Bersihkan</button>
+          <button type="submit" id="submitBtn" class="btn btn-primary">Simpan data</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="rekapTitle">
+    <div class="section-head">
+      <h2 id="rekapTitle">Rekap</h2>
+      <p id="rekapMeta">Menunggu data dimuat.</p>
+    </div>
+
+    <div class="stats" id="stats" hidden>
+      <div class="stat">
+        <span class="stat-k">Jumlah entri</span>
+        <span class="stat-v" id="statCount">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-k">Total line</span>
+        <span class="stat-v" id="statLine">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-k">Total durasi</span>
+        <span class="stat-v" id="statDur">-</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="field field-sm">
+        <label for="filterFrom">Dari tanggal</label>
+        <input id="filterFrom" type="date">
+      </div>
+      <div class="field field-sm">
+        <label for="filterTo">Sampai tanggal</label>
+        <input id="filterTo" type="date">
+      </div>
+      <div class="field field-sm grow">
+        <label for="filterQ">Cari nama</label>
+        <input id="filterQ" type="search" placeholder="Ketik nama penginput">
+      </div>
+      <div class="toolbar-btns">
+        <button id="resetFilter" class="btn btn-ghost" type="button">Reset filter</button>
+        <button id="exportBtn" class="btn btn-primary" type="button">Unduh Excel</button>
+      </div>
+    </div>
+
+    <div id="tableStates" class="states" role="status" aria-live="polite"></div>
+
+    <div class="table-wrap" id="tableWrap" hidden>
+      <table id="dataTable">
+        <caption class="sr-only">Rekap durasi kerja per orang</caption>
+        <thead>
+          <tr>
+            <th scope="col">Tanggal</th>
+            <th scope="col">Nama</th>
+            <th scope="col" class="num">Line</th>
+            <th scope="col">Proses 1 &middot; Draft PO &rarr; migrasi</th>
+            <th scope="col">Proses 2 &middot; Reserved CO &rarr; picklist</th>
+            <th scope="col" class="num">Total</th>
+            <th scope="col"><span class="sr-only">Aksi</span></th>
+          </tr>
+        </thead>
+        <tbody id="dataBody"></tbody>
+        <tfoot id="dataFoot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap foot">
+  <p>Rekap Durasi Kerja &middot; data tersimpan di <span id="footStore">penyimpanan yang dipilih</span>.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+<script src="config.js"></script>
+<script src="app.js" defer></script>
+</body>
+</html>
