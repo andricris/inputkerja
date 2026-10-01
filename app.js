@@ -77,27 +77,42 @@
   }
 
   function fmtDate(iso) {
-    var p = String(iso || "").split("-");
-    if (p.length !== 3) return iso || "";
-    return p[2] + "/" + p[1] + "/" + p[0];
+    var parts = String(iso || "").split("T")[0].split("-");
+    if (parts.length !== 3) return String(iso || "");
+    return parts[2] + "/" + parts[1] + "/" + parts[0];
+  }
+
+  // Jam yang terlanjur tersimpan sebagai objek tanggal (data lama) dikembalikan ke HH:mm.
+  function timeOnly(t) {
+    var s = String(t || "");
+    if (s.indexOf("T") === -1) return s;
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
   }
 
   function normalize(r) {
     r = r || {};
-    var d1 = durMinutes(r.d1_mulai, r.d1_selesai);
-    var d2 = durMinutes(r.d2_mulai, r.d2_selesai);
+    var d1_mulai = timeOnly(r.d1_mulai);
+    var d1_selesai = timeOnly(r.d1_selesai);
+    var d2_mulai = timeOnly(r.d2_mulai);
+    var d2_selesai = timeOnly(r.d2_selesai);
+    var d1 = durMinutes(d1_mulai, d1_selesai);
+    var d2 = durMinutes(d2_mulai, d2_selesai);
+    if (d1 === null) d1 = numOrNull(r.d1_menit);
+    if (d2 === null) d2 = numOrNull(r.d2_menit);
     return {
       id: r.id || uid(),
       timestamp: r.timestamp || "",
-      tanggal: r.tanggal || "",
+      tanggal: String(r.tanggal || "").split("T")[0],
       nama: String(r.nama || "").trim(),
       jumlah_line: numOrNull(r.jumlah_line) || 0,
-      d1_mulai: r.d1_mulai || "",
-      d1_selesai: r.d1_selesai || "",
-      d1_menit: d1,
-      d2_mulai: r.d2_mulai || "",
-      d2_selesai: r.d2_selesai || "",
-      d2_menit: d2,
+      d1_mulai: d1_mulai,
+      d1_selesai: d1_selesai,
+      d1_menit: d1 || 0,
+      d2_mulai: d2_mulai,
+      d2_selesai: d2_selesai,
+      d2_menit: d2 || 0,
       total_menit: (d1 || 0) + (d2 || 0)
     };
   }

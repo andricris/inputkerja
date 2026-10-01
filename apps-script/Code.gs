@@ -13,6 +13,14 @@ var HEADERS = [
   'total_menit'
 ];
 
+// Kolom teks (1-based). Wajib format plain text supaya Sheets tidak mengubah
+// "2026-10-01" atau "09:26" menjadi objek tanggal.
+var TEXT_COLUMNS = [1, 2, 3, 4, 6, 7, 9, 10]; // A,B,C,D,F,G,I,J
+
+// Indeks kolom (0-based) yang perlu diformat ulang bila terlanjur jadi Date.
+var COL_TANGGAL = 2;
+var COL_TIMES = [5, 6, 8, 9];
+
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || 'list';
   if (action === 'list') {
@@ -52,6 +60,9 @@ function getSheet() {
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
+    TEXT_COLUMNS.forEach(function (col) {
+      sheet.getRange(2, col, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
+    });
   }
   return sheet;
 }
@@ -61,6 +72,7 @@ function readAll() {
   var last = sheet.getLastRow();
   if (last < 2) return [];
 
+  var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   var values = sheet.getRange(2, 1, last - 1, HEADERS.length).getValues();
   return values
     .filter(function (row) { return row[0] !== '' && row[0] !== null; })
@@ -68,7 +80,12 @@ function readAll() {
       var obj = {};
       HEADERS.forEach(function (key, i) {
         var v = row[i];
-        obj[key] = (v instanceof Date) ? v.toISOString() : v;
+        if (v instanceof Date) {
+          if (i === COL_TANGGAL) v = Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+          else if (COL_TIMES.indexOf(i) !== -1) v = Utilities.formatDate(v, tz, 'HH:mm');
+          else v = v.toISOString();
+        }
+        obj[key] = v;
       });
       return obj;
     });
@@ -101,7 +118,12 @@ function addRecord(payload) {
       total_menit: (d1 || 0) + (d2 || 0)
     };
 
-    sheet.appendRow(HEADERS.map(function (key) { return rec[key]; }));
+    var row = sheet.getLastRow() + 1;
+    // Format teks dipasang sebelum menulis nilai agar tanggal dan jam tetap string.
+    TEXT_COLUMNS.forEach(function (col) {
+      sheet.getRange(row, col).setNumberFormat('@');
+    });
+    sheet.getRange(row, 1, 1, HEADERS.length).setValues([HEADERS.map(function (key) { return rec[key]; })]);
     return rec;
   } finally {
     lock.releaseLock();
