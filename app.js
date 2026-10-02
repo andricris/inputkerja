@@ -12,7 +12,8 @@
     records: [],
     loading: false,
     error: null,
-    filters: { from: "", to: "", q: "" }
+    filters: { from: "", to: "", q: "" },
+    editId: null   // id entri yang sedang diubah, null = mode tambah
   };
 
   // Nomor urut load: hasil request lama yang baru sampai dibuang supaya
@@ -200,6 +201,22 @@
     return data.data || rec;
   }
 
+  async function apiUpdate(rec) {
+    if (MODE === "local") {
+      var rows = localRead().map(function (r) { return r.id === rec.id ? rec : r; });
+      localWrite(rows);
+      return rec;
+    }
+    var res = await fetch(API_URL, {
+      method: "POST",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: postBody({ action: "update", payload: rec })
+    });
+    var data = await parseResponse(res);
+    return data.data || rec;
+  }
+
   async function apiDelete(id) {
     if (MODE === "local") {
       localWrite(localRead().filter(function (r) { return r.id !== id; }));
@@ -289,7 +306,10 @@
         '<td data-label="Proses 1">' + cellProses(r.d1_mulai, r.d1_selesai, r.d1_menit) + "</td>" +
         '<td data-label="Proses 2">' + cellProses(r.d2_mulai, r.d2_selesai, r.d2_menit) + "</td>" +
         '<td data-label="Total" class="num">' + fmtDuration(r.total_menit) + "</td>" +
-        '<td class="cell-aksi"><button class="btn btn-ghost btn-del" type="button" data-del="' + esc(r.id) +
+        '<td class="cell-aksi">' +
+        '<button class="btn btn-ghost btn-edit" type="button" data-edit="' + esc(r.id) +
+        '" aria-label="Edit entri ' + esc(r.nama) + '">Edit</button>' +
+        '<button class="btn btn-ghost btn-del" type="button" data-del="' + esc(r.id) +
         '" aria-label="Hapus entri ' + esc(r.nama) + '">Hapus</button></td>' +
         "</tr>";
     });
@@ -425,17 +445,78 @@
     el.totalPreview.textContent = (d1 === null && d2 === null) ? "-" : fmtDuration((d1 || 0) + (d2 || 0));
   }
 
+  /* ---- mode ubah ------------------------------------------------------- */
+
+  function setEditMode(id, label) {
+    state.editId = id;
+    el.editBanner.hidden = false;
+    el.editBannerText.textContent = "Mode ubah data \"" + label +
+      "\" — ubah isian di bawah, lalu tekan Simpan perubahan.";
+    el.submitBtn.textContent = "Simpan perubahan";
+  }
+
+  function clearEditMode() {
+    state.editId = null;
+    el.editBanner.hidden = true;
+    el.editBannerText.textContent = "";
+    el.submitBtn.textContent = "Simpan data";
+  }
+
+  function recordById(id) {
+    var hit = state.records.filter(function (r) { return r.id === id; });
+    return hit[0] || null;
+  }
+
+  // Klik Edit -> konfirmasi -> isi form dari data terpilih -> mode ubah.
+  function onEdit(id) {
+    var rec = recordById(id);
+    if (!rec) return;
+    var label = rec.nama || "entri ini";
+    if (!window.confirm('Yakin akan edit data ini ("' + label + '")?\n' +
+      "Form di atas akan diisi dengan data tersebut untuk diubah.")) return;
+
+    setEditMode(id, label);
+    el.nama.value = rec.nama;
+    el.tanggal.value = rec.tanggal || todayISO();
+    el.jumlah_line.value = Number(rec.jumlah_line) || 0;
+    el.d1_mulai.value = rec.d1_mulai || "";
+    el.d1_selesai.value = rec.d1_selesai || "";
+    el.d2_mulai.value = rec.d2_mulai || "";
+    el.d2_selesai.value = rec.d2_selesai || "";
+    clearFormError();
+    updatePreviews();
+
+    if (typeof el.entryForm.scrollIntoView === "function") {
+      el.entryForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    el.nama.focus();
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
     clearFormError();
     var v = readForm();
     var err = validate(v);
     if (err) { showFormError(err); return; }
-    if (!confirmOddDuration(v)) return;
+
+    var editingId = state.editId;
+    var target = editingId ? recordById(editingId) : null;
+
+    if (editingId) {
+      if (!target) {
+        clearEditMode();
+        showFormError("Entri yang diubah sudah tidak ada. Muat ulang halaman lalu coba lagi.");
+        return;
+      }
+      if (!window.confirm('Yakin simpan perubahan data ini ("' + v.nama + '")?\n' +
+        "Data lama akan ditimpa oleh isian baru.")) return;
+    } else if (!confirmOddDuration(v)) {
+      return;
+    }
 
     var rec = normalize({
-      id: uid(),
-      timestamp: new Date().toISOString(),
+      id: editingId || uid(),
+      timestamp: editingId ? target.timestamp : new Date().toISOString(),
       tanggal: v.tanggal,
       nama: v.nama,
       jumlah_line: Number(v.jumlah_line) || 0,
@@ -448,16 +529,18 @@
     el.submitBtn.disabled = true;
     el.submitBtn.textContent = "Menyimpan...";
     try {
-      await apiAdd(rec);
+      if (editingId) await apiUpdate(rec);
+      else await apiAdd(rec);
+      clearEditMode();
       el.entryForm.reset();
       el.tanggal.value = todayISO();
       updatePreviews();
       await load();
     } catch (ex) {
-      showFormError("Gagal menyimpan: " + ex.message);
+      showFormError((editingId ? "Gagal menyimpan perubahan: " : "Gagal menyimpan: ") + ex.message);
     } finally {
       el.submitBtn.disabled = false;
-      el.submitBtn.textContent = "Simpan data";
+      el.submitBtn.textContent = state.editId ? "Simpan perubahan" : "Simpan data";
     }
   }
 
@@ -487,9 +570,10 @@
   }
 
   async function onDelete(id) {
-    var rec = state.records.filter(function (r) { return r.id === id; })[0];
-    var label = rec ? rec.nama : "ini";
-    if (!window.confirm('Hapus entri "' + label + '"?')) return;
+    var rec = recordById(id);
+    var label = rec ? rec.nama : "entri ini";
+    if (!window.confirm('Yakin akan hapus data ini ("' + label + '")?\n' +
+      "Hapus tidak bisa dibatalkan.")) return;
     try {
       await apiDelete(id);
       await load();
@@ -601,6 +685,7 @@
       "entryForm", "nama", "namaList", "tanggal", "jumlah_line",
       "d1_mulai", "d1_selesai", "d1_dur", "d2_mulai", "d2_selesai", "d2_dur",
       "formError", "totalPreview", "submitBtn",
+      "editBanner", "editBannerText", "editCancel",
       "rekapMeta", "stats", "statCount", "statLine", "statDur",
       "filterFrom", "filterTo", "filterQ", "resetFilter", "exportBtn",
       "tableStates", "tableWrap", "dataBody", "dataFoot", "footStore"
@@ -611,10 +696,16 @@
     el.entryForm.addEventListener("submit", onSubmit);
     el.entryForm.addEventListener("reset", function () {
       setTimeout(function () {
+        clearEditMode();
         el.tanggal.value = todayISO();
         clearFormError();
         updatePreviews();
       }, 0);
+    });
+
+    el.editCancel.addEventListener("click", function () {
+      clearEditMode();
+      el.entryForm.reset();
     });
     [el.d1_mulai, el.d1_selesai, el.d2_mulai, el.d2_selesai].forEach(function (i) {
       i.addEventListener("input", updatePreviews);
@@ -643,8 +734,10 @@
     el.exportBtn.addEventListener("click", onExport);
 
     el.dataBody.addEventListener("click", function (e) {
-      var btn = e.target.closest("[data-del]");
-      if (btn) onDelete(btn.getAttribute("data-del"));
+      var del = e.target.closest("[data-del]");
+      if (del) { onDelete(del.getAttribute("data-del")); return; }
+      var ed = e.target.closest("[data-edit]");
+      if (ed) onEdit(ed.getAttribute("data-edit"));
     });
 
     el.tableStates.addEventListener("click", function (e) {

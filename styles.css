@@ -201,6 +201,7 @@ html[data-theme="dark"] .brand-mark { background: var(--accent); color: var(--ac
 }
 .btn-icon:hover { background: var(--err-soft); color: var(--err); }
 
+.btn-edit,
 .btn-del {
   padding: 5px 11px;
   min-height: 32px;
@@ -208,7 +209,32 @@ html[data-theme="dark"] .brand-mark { background: var(--accent); color: var(--ac
   color: var(--ink-soft);
   border-color: var(--line);
 }
+.btn-edit:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
 .btn-del:hover { background: var(--err-soft); color: var(--err); border-color: var(--err); }
+
+.btn-sm {
+  padding: 5px 11px;
+  min-height: 30px;
+  font-size: 13px;
+}
+
+/* Mode ubah: banner di atas form ----------------------------------------- */
+
+.edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 14px;
+}
+.edit-banner strong { font-weight: 600; }
 
 /* Cards & sections ----------------------------------------------------- */
 
@@ -554,3 +580,6 @@ tfoot td.num { font-family: var(--font-mono); }
 @media (min-width: 721px) {
   td.cell-aksi { text-align: right; width: 1%; }
 }
+
+/* Jarak antar tombol aksi (Edit / Hapus) */
+td.cell-aksi .btn + .btn { margin-left: 6px; }

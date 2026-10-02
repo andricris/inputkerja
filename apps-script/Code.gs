@@ -64,6 +64,9 @@ function doPost(e) {
     if (body.action === 'add') {
       return json({ ok: true, data: addRecord(body.payload || {}) });
     }
+    if (body.action === 'update') {
+      return json({ ok: true, data: updateRecord(body.payload || {}) });
+    }
     if (body.action === 'delete') {
       var res = deleteRecord(body.id);
       if (!res.deleted) return json({ ok: false, error: 'Data tidak ditemukan' });
@@ -196,6 +199,44 @@ function validatePayload_(payload) {
 
 /* ---- aksi ------------------------------------------------------------- */
 
+function uid_() {
+  return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function checkId_(id) {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(String(id))) throw new Error('Id tidak valid');
+  return String(id);
+}
+
+/** Susun objek record dari payload yang sudah divalidasi. */
+function recFromPayload_(payload, id, timestamp) {
+  var v = validatePayload_(payload);
+  var d1 = diffMinutes(v.times.d1_mulai, v.times.d1_selesai);
+  var d2 = diffMinutes(v.times.d2_mulai, v.times.d2_selesai);
+  return {
+    id: id,
+    timestamp: timestamp,
+    tanggal: v.tanggal,
+    nama: v.nama,
+    jumlah_line: v.jumlah,
+    d1_mulai: v.times.d1_mulai,
+    d1_selesai: v.times.d1_selesai,
+    d1_menit: d1 === null ? 0 : d1,
+    d2_mulai: v.times.d2_mulai,
+    d2_selesai: v.times.d2_selesai,
+    d2_menit: d2 === null ? 0 : d2,
+    total_menit: (d1 || 0) + (d2 || 0)
+  };
+}
+
+/** Tulis satu baris penuh. Format teks dipasang dulu agar tanggal/jam tetap string. */
+function writeRow_(sheet, row, rec) {
+  TEXT_COLUMNS.forEach(function (col) {
+    sheet.getRange(row, col).setNumberFormat('@');
+  });
+  sheet.getRange(row, 1, 1, HEADERS.length).setValues([HEADERS.map(function (key) { return rec[key]; })]);
+}
+
 function addRecord(payload) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -205,40 +246,40 @@ function addRecord(payload) {
       throw new Error('Baris data sudah penuh (' + MAX_ROWS + '), hubungi admin');
     }
 
-    var v = validatePayload_(payload);
-    var mulai1 = v.times.d1_mulai;
-    var selesai1 = v.times.d1_selesai;
-    var mulai2 = v.times.d2_mulai;
-    var selesai2 = v.times.d2_selesai;
-
-    var d1 = diffMinutes(mulai1, selesai1);
-    var d2 = diffMinutes(mulai2, selesai2);
-
-    var id = payload.id ? String(payload.id) : ('r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
-    if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) throw new Error('Id tidak valid');
+    var id = payload.id ? checkId_(payload.id) : uid_();
     if (findRowById_(sheet, id) !== -1) throw new Error('Id duplikat: ' + id);
 
-    var rec = {
-      id: id,
-      timestamp: payload.timestamp || new Date().toISOString(),
-      tanggal: v.tanggal,
-      nama: v.nama,
-      jumlah_line: v.jumlah,
-      d1_mulai: mulai1,
-      d1_selesai: selesai1,
-      d1_menit: d1 === null ? 0 : d1,
-      d2_mulai: mulai2,
-      d2_selesai: selesai2,
-      d2_menit: d2 === null ? 0 : d2,
-      total_menit: (d1 || 0) + (d2 || 0)
-    };
+    var rec = recFromPayload_(payload, id, payload.timestamp || new Date().toISOString());
+    writeRow_(sheet, sheet.getLastRow() + 1, rec);
+    return rec;
+  } finally {
+    lock.releaseLock();
+  }
+}
 
-    var row = sheet.getLastRow() + 1;
-    // Format teks dipasang sebelum menulis nilai agar tanggal dan jam tetap string.
-    TEXT_COLUMNS.forEach(function (col) {
-      sheet.getRange(row, col).setNumberFormat('@');
-    });
-    sheet.getRange(row, 1, 1, HEADERS.length).setValues([HEADERS.map(function (key) { return rec[key]; })]);
+/**
+ * Ubah baris yang sudah ada. Id wajib ada; timestamp asli dipertahankan
+ * supaya kolom itu tetap berarti "kapan data dibuat".
+ */
+function updateRecord(payload) {
+  if (!payload || !payload.id) throw new Error('id wajib dikirim untuk mengubah');
+  var id = checkId_(payload.id);
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getSheet();
+    var row = findRowById_(sheet, id);
+    if (row === -1) throw new Error('Data tidak ditemukan');
+
+    var existing = sheet.getRange(row, 1, 1, HEADERS.length).getValues()[0];
+    var ts = existing[1];
+    if (ts instanceof Date) ts = ts.toISOString();
+    ts = String(ts || '').trim();
+    if (!ts) ts = new Date().toISOString();
+
+    var rec = recFromPayload_(payload, id, ts);
+    writeRow_(sheet, row, rec);
     return rec;
   } finally {
     lock.releaseLock();
