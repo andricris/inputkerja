@@ -7,6 +7,7 @@
   var MODE = API_URL ? "sheet" : "local";
   var LS_DATA = "rdk_records_v1";
   var LS_THEME = "rdk_theme";
+  var TIME_FMT = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
   var state = {
     records: [],
@@ -104,13 +105,25 @@
     return p[2] + "/" + p[1] + "/" + p[0];
   }
 
+  // "9:19" -> "09:19".
+  // <input type="time"> hanya menerima HH:mm dan akan mengosongkan nilai lain,
+  // jadi data lama tanpa nol depan wajib dipad sebelum masuk form atau tabel.
+  function padTime(t) {
+    var s = String(t == null ? "" : t).trim();
+    var m = /^(\d{1,2}):(\d{2})$/.exec(s);
+    if (!m) return s;
+    var h = parseInt(m[1], 10);
+    if (h > 23) return s;
+    return (h < 10 ? "0" : "") + h + ":" + m[2];
+  }
+
   // Jam yang terlanjur tersimpan sebagai objek tanggal (data lama) dikembalikan ke HH:mm.
   function timeOnly(t) {
     var s = String(t || "");
-    if (s.indexOf("T") === -1) return s;
+    if (s.indexOf("T") === -1) return padTime(s);
     var d = new Date(s);
     if (isNaN(d.getTime())) return s;
-    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+    return padTime(("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2));
   }
 
   function normalize(r) {
@@ -417,6 +430,8 @@
       if ((p[1] && !p[2]) || (!p[1] && p[2])) {
         return p[0] + ": jam mulai dan jam selesai harus diisi keduanya.";
       }
+      if (p[1] && !TIME_FMT.test(p[1])) return p[0] + ": jam mulai harus format HH:mm (misal 09:19).";
+      if (p[2] && !TIME_FMT.test(p[2])) return p[0] + ": jam selesai harus format HH:mm (misal 09:37).";
       if (p[1] && p[2] && durMinutes(p[1], p[2]) === 0) {
         return p[0] + ": durasi 0 menit, jam mulai dan jam selesai sama.";
       }

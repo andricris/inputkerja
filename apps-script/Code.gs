@@ -34,7 +34,17 @@ var MAX_LIST = 1000;   // batas baris yang dikirim per request list
 var MAX_NAMA = 80;
 
 var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-var TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+// Menerima H:mm maupun HH:mm; nilai diseragamkan ke HH:mm lewat padTime_.
+var TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
+
+/** "9:19" -> "09:19". Nilai di luar format jam dikembalikan apa adanya. */
+function padTime_(t) {
+  var m = /^(\d{1,2}):(\d{2})$/.exec(String(t === undefined || t === null ? '' : t).trim());
+  if (!m) return String(t === undefined || t === null ? '' : t);
+  var h = parseInt(m[1], 10);
+  if (h > 23) return String(t);
+  return (h < 10 ? '0' : '') + h + ':' + m[2];
+}
 
 /* ---- entry points ----------------------------------------------------- */
 
@@ -137,6 +147,10 @@ function readAll(limit) {
           if (i === COL_TANGGAL) v = Utilities.formatDate(v, tz, 'yyyy-MM-dd');
           else if (COL_TIMES.indexOf(i) !== -1) v = Utilities.formatDate(v, tz, 'HH:mm');
           else v = v.toISOString();
+        } else if (typeof v === 'string' && COL_TIMES.indexOf(i) !== -1) {
+          // Nilai lama seperti "9:19" diseragamkan ke "09:19" supaya aman
+          // dimasukkan ke <input type="time"> di browser.
+          v = padTime_(v);
         }
         obj[key] = v;
       });
@@ -171,10 +185,10 @@ function validatePayload_(payload) {
   }
 
   var times = {
-    d1_mulai: String(payload.d1_mulai || ''),
-    d1_selesai: String(payload.d1_selesai || ''),
-    d2_mulai: String(payload.d2_mulai || ''),
-    d2_selesai: String(payload.d2_selesai || '')
+    d1_mulai: padTime_(payload.d1_mulai),
+    d1_selesai: padTime_(payload.d1_selesai),
+    d2_mulai: padTime_(payload.d2_mulai),
+    d2_selesai: padTime_(payload.d2_selesai)
   };
 
   ['d1', 'd2'].forEach(function (k) {
@@ -349,14 +363,23 @@ function normalizeSheet() {
 }
 
 // ISO (Date atau teks ber-'T') -> pola yang diminta. Selain itu dibiarkan.
+// Untuk pola jam hasilnya selalu di-pad ke HH:mm.
 function legacyToText_(value, pattern, tz) {
+  var out;
   if (value === '' || value === null || value === undefined) return value;
-  if (value instanceof Date) return Utilities.formatDate(value, tz, pattern);
-  var s = String(value);
-  if (s.indexOf('T') === -1) return s;
-  var d = new Date(s);
-  if (isNaN(d.getTime())) return s;
-  return Utilities.formatDate(d, tz, pattern);
+  if (value instanceof Date) {
+    out = Utilities.formatDate(value, tz, pattern);
+  } else {
+    var s = String(value);
+    if (s.indexOf('T') === -1) {
+      out = s;
+    } else {
+      var d = new Date(s);
+      out = isNaN(d.getTime()) ? s : Utilities.formatDate(d, tz, pattern);
+    }
+  }
+  if (pattern === 'HH:mm') out = padTime_(out);
+  return out;
 }
 
 /* ---- util ------------------------------------------------------------- */
