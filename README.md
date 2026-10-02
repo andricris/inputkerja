@@ -34,15 +34,22 @@ apps-script/Code.gs   Backend Google Sheets (opsional)
    - Execute as: **Me**
    - Who has access: **Anyone**
 5. Klik **Deploy**, izinkan akses saat diminta, lalu salin **Web app URL** (diakhiri `/exec`).
-6. Buka `config.js`, tempel URL tadi, simpan:
+6. Buat token akses: buka **Project Settings (ikon gerigi) - Script properties**, tambahkan
+   property baru: Name `RDK_TOKEN`, Value bebas (disarankan 32 karakter acak, misalnya
+   hasil `openssl rand -hex 16`), lalu **Save property**.
+7. Buka `config.js`, tempel URL tadi dan **token yang sama persis**, lalu simpan:
 
    ```js
    window.APP_CONFIG = {
-     API_URL: "https://script.google.com/macros/s/XXXXXXXX/exec"
+     API_URL: "https://script.google.com/macros/s/XXXXXXXX/exec",
+     TOKEN: "32-karakter-acak-sama-dengan-rdk_token"
    };
    ```
 
-7. Setiap kali `Code.gs` diubah, lakukan **Deploy - Manage deployments - Edit - Version: New version - Deploy** supaya perubahan ikut aktif.
+   Tanpa token yang sama, backend menolak semua request dengan pesan
+   *Token backend belum diatur* atau *Token tidak valid*.
+
+8. Setiap kali `Code.gs` diubah, lakukan **Deploy - Manage deployments - Edit - Version: New version - Deploy** supaya perubahan ikut aktif.
 
 Di halaman akan tampil status **Tersambung Google Sheets** kalau URL sudah benar.
 

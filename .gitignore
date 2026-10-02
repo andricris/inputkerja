@@ -1,0 +1,8 @@
+# Konfigurasi agent lokal — jangan dipublikasikan ke GitHub Pages.
+.kilo/
+
+# Artefak lokal
+*.log
+.DS_Store
+Thumbs.db
+node_modules/

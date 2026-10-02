@@ -2,7 +2,8 @@
   "use strict";
 
   var cfg = window.APP_CONFIG || {};
-  var API_URL = (cfg.API_URL || "").trim();
+  var API_URL = String(cfg.API_URL || "").trim();
+  var TOKEN = String(cfg.TOKEN || "").trim();
   var MODE = API_URL ? "sheet" : "local";
   var LS_DATA = "rdk_records_v1";
   var LS_THEME = "rdk_theme";
@@ -13,6 +14,10 @@
     error: null,
     filters: { from: "", to: "", q: "" }
   };
+
+  // Nomor urut load: hasil request lama yang baru sampai dibuang supaya
+  // tidak menimpa data yang lebih baru.
+  var loadSeq = 0;
 
   var el = {};
 
@@ -147,11 +152,34 @@
     localStorage.setItem(LS_DATA, JSON.stringify(rows));
   }
 
+  // Satu pintu baca respons: cek status HTTP, cek JSON, cek flag ok.
+  async function parseResponse(res) {
+    if (!res.ok) throw new Error("Server merespons HTTP " + res.status);
+    var data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      throw new Error("Respons server bukan JSON (kuota Apps Script mungkin sudah habis)");
+    }
+    if (!data || !data.ok) throw new Error((data && data.error) || "Respons server tidak valid");
+    return data;
+  }
+
+  function listURL() {
+    var url = API_URL + "?action=list";
+    if (TOKEN) url += "&token=" + encodeURIComponent(TOKEN);
+    return url;
+  }
+
+  function postBody(obj) {
+    obj.token = TOKEN;
+    return JSON.stringify(obj);
+  }
+
   async function apiList() {
     if (MODE === "local") return localRead();
-    var res = await fetch(API_URL + "?action=list", { method: "GET", redirect: "follow" });
-    var data = await res.json();
-    if (!data.ok) throw new Error(data.error || "Respons server tidak valid");
+    var res = await fetch(listURL(), { method: "GET", redirect: "follow" });
+    var data = await parseResponse(res);
     return data.data || [];
   }
 
@@ -166,10 +194,9 @@
       method: "POST",
       redirect: "follow",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "add", payload: rec })
+      body: postBody({ action: "add", payload: rec })
     });
-    var data = await res.json();
-    if (!data.ok) throw new Error(data.error || "Gagal menyimpan data");
+    var data = await parseResponse(res);
     return data.data || rec;
   }
 
@@ -182,10 +209,9 @@
       method: "POST",
       redirect: "follow",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "delete", id: id })
+      body: postBody({ action: "delete", id: id })
     });
-    var data = await res.json();
-    if (!data.ok) throw new Error(data.error || "Gagal menghapus data");
+    await parseResponse(res);
     return true;
   }
 
@@ -371,9 +397,24 @@
       if ((p[1] && !p[2]) || (!p[1] && p[2])) {
         return p[0] + ": jam mulai dan jam selesai harus diisi keduanya.";
       }
+      if (p[1] && p[2] && durMinutes(p[1], p[2]) === 0) {
+        return p[0] + ": durasi 0 menit, jam mulai dan jam selesai sama.";
+      }
     }
     if (!v.d1_mulai && !v.d2_mulai) return "Isi minimal satu proses dengan jam mulai dan jam selesai.";
     return null;
+  }
+
+  // Durasi yang tidak wajar dikonfirmasi dulu sebelum disimpan.
+  function confirmOddDuration(v) {
+    var checks = [["Proses 1", v.d1_mulai, v.d1_selesai], ["Proses 2", v.d2_mulai, v.d2_selesai]];
+    var odd = [];
+    checks.forEach(function (c) {
+      var d = durMinutes(c[1], c[2]);
+      if (d !== null && d > 720) odd.push(c[0] + " " + fmtDuration(d));
+    });
+    if (!odd.length) return true;
+    return window.confirm("Durasi tidak wajar: " + odd.join(", ") + ".\nLanjutkan simpan?");
   }
 
   function updatePreviews() {
@@ -390,6 +431,7 @@
     var v = readForm();
     var err = validate(v);
     if (err) { showFormError(err); return; }
+    if (!confirmOddDuration(v)) return;
 
     var rec = normalize({
       id: uid(),
@@ -422,20 +464,24 @@
   /* ---- muat & aksi ----------------------------------------------------- */
 
   async function load() {
+    var seq = ++loadSeq;
     state.loading = true;
     state.error = null;
     setConn("loading", "Memuat data...");
     render();
     try {
       var data = await apiList();
+      if (seq !== loadSeq) return; // hasil lama, buang
       state.records = (data || []).map(normalize);
       setConn(MODE === "sheet" ? "sheet" : "local",
         MODE === "sheet" ? "Tersambung Google Sheets" : "Mode lokal (browser)");
     } catch (ex) {
+      if (seq !== loadSeq) return;
       state.error = ex;
       state.records = [];
       setConn("error", "Gagal memuat data");
     }
+    if (seq !== loadSeq) return;
     state.loading = false;
     render();
   }
@@ -478,12 +524,17 @@
     return aoa;
   }
 
+  // Netralkan formula Excel: nilai yang diawali =, +, -, @ bisa dieksekusi
+  // saat file CSV dibuka. Tanda kutip di depan memaksa Excel memakainya sebagai teks.
+  function csvCell(cell) {
+    var s = String(cell == null ? "" : cell);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
   function exportCSV(aoa, filename) {
     var csv = aoa.map(function (row) {
-      return row.map(function (cell) {
-        var s = String(cell == null ? "" : cell);
-        return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-      }).join(";");
+      return row.map(csvCell).join(";");
     }).join("\r\n");
     var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
     triggerDownload(blob, filename);
