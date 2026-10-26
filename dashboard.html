@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Dashboard Durasi Kerja</title>
+<meta name="description" content="Dashboard rekap durasi kerja dua proses produksi: tren harian, durasi per orang, komposisi proses, dan perbandingan data manual dengan data aplikasi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23c2410c'/%3E%3Crect x='7' y='21' width='4' height='5' fill='white'/%3E%3Crect x='14' y='15' width='4' height='11' fill='white'/%3E%3Crect x='21' y='9' width='4' height='17' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Lewati ke konten</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">RDK</span>
+      <div class="brand-text">
+        <h1>Dashboard Durasi Kerja</h1>
+        <p class="brand-sub">Rekap dua proses produksi &middot; <span id="metaPeriode">memuat&hellip;</span></p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="conn" title="Sumber data">
+        <span id="connDot" class="conn-dot" data-state="loading" aria-hidden="true"></span>
+        <span id="connText">Menyiapkan&hellip;</span>
+      </span>
+      <a class="btn btn-ghost" href="index.html">&larr; Input data</a>
+      <button id="themeToggle" class="btn btn-ghost" type="button" aria-pressed="false">Mode gelap</button>
+    </div>
+  </div>
+  <div class="rule" aria-hidden="true"></div>
+</header>
+
+<main class="wrap" id="main">
+
+  <section class="card filters" aria-label="Filter dashboard">
+    <div class="filter-grid">
+      <div class="field">
+        <label for="fFrom">Dari tanggal</label>
+        <input id="fFrom" type="date">
+      </div>
+      <div class="field">
+        <label for="fTo">Sampai tanggal</label>
+        <input id="fTo" type="date">
+      </div>
+      <div class="field">
+        <label for="fNama">Nama</label>
+        <select id="fNama">
+          <option value="">Semua orang</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fSumber">Sumber data</label>
+        <select id="fSumber">
+          <option value="all">Semua</option>
+          <option value="app">Aplikasi (&ge; 19 Okt 2026)</option>
+          <option value="manual">Manual (&lt; 19 Okt 2026)</option>
+        </select>
+      </div>
+      <div class="filter-btns">
+        <button id="btnReset" class="btn btn-ghost" type="button">Reset</button>
+        <button id="btnRefresh" class="btn btn-primary" type="button">Muat ulang</button>
+      </div>
+    </div>
+    <p class="filter-note" id="filterNote"></p>
+  </section>
+
+  <section class="card card-hero compare-card" id="compareCard" aria-labelledby="compareTitle">
+    <div class="card-head">
+      <h2 id="compareTitle">Rata-rata per entri: manual vs aplikasi</h2>
+      <span class="card-sub">sebelum dan sesudah 19/10/2026</span>
+    </div>
+    <div id="compareBox" class="compare"></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Ringkasan angka">
+    <div class="kpi">
+      <span class="kpi-k">Entri</span>
+      <span class="kpi-v" id="kEntri">–</span>
+      <span class="kpi-s" id="kEntriSub">&nbsp;</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k">Total line</span>
+      <span class="kpi-v" id="kLine">–</span>
+      <span class="kpi-s" id="kLineSub">&nbsp;</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k">Total durasi</span>
+      <span class="kpi-v" id="kDur">–</span>
+      <span class="kpi-s" id="kDurSub">&nbsp;</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k">Orang</span>
+      <span class="kpi-v" id="kOrang">–</span>
+      <span class="kpi-s" id="kOrangSub">&nbsp;</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k">Rata-rata / entri</span>
+      <span class="kpi-v" id="kAvg">–</span>
+      <span class="kpi-s" id="kAvgSub">&nbsp;</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k">Laju kerja</span>
+      <span class="kpi-v" id="kRate">–</span>
+      <span class="kpi-s" id="kRateSub">&nbsp;</span>
+    </div>
+  </section>
+
+  <section class="grid" id="grid">
+
+    <article class="card span4">
+      <div class="card-head">
+        <h2>Durasi per tanggal, Proses 1 vs Proses 2</h2>
+        <span class="card-sub">menit</span>
+      </div>
+      <div class="chart" id="chartDaily" role="img" aria-label="Grafik durasi harian"></div>
+    </article>
+
+    <article class="card span2">
+      <div class="card-head">
+        <h2>Porsi waktu per proses</h2>
+        <span class="card-sub">total menit</span>
+      </div>
+      <div class="chart chart-donut" id="chartDonut" role="img" aria-label="Komposisi durasi per proses"></div>
+    </article>
+
+    <article class="card span3">
+      <div class="card-head">
+        <h2>Total durasi per orang</h2>
+        <span class="card-sub">menit</span>
+      </div>
+      <div class="chart" id="chartPerson" role="img" aria-label="Durasi per orang"></div>
+    </article>
+
+    <article class="card span3">
+      <div class="card-head">
+        <h2>Total line per orang</h2>
+        <span class="card-sub">jumlah line</span>
+      </div>
+      <div class="chart" id="chartLine" role="img" aria-label="Line per orang"></div>
+    </article>
+
+    <article class="card span6">
+      <div class="card-head">
+        <h2>Rekap per orang</h2>
+        <span class="card-sub">diurutkan dari durasi terbesar</span>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl" id="tblPerson">
+          <thead>
+            <tr>
+              <th scope="col">Nama</th>
+              <th scope="col" class="num">Entri</th>
+              <th scope="col" class="num">Line</th>
+              <th scope="col" class="num">Durasi</th>
+              <th scope="col" class="num">Rata-rata</th>
+              <th scope="col" class="num">Line/entri</th>
+              <th scope="col" class="num">Line/jam</th>
+            </tr>
+          </thead>
+          <tbody id="tblPersonBody"></tbody>
+          <tfoot id="tblPersonFoot"></tfoot>
+        </table>
+      </div>
+    </article>
+
+    <article class="card span6">
+      <div class="card-head">
+        <h2>Rekap per tanggal</h2>
+        <span class="card-sub">urut kronologis</span>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl" id="tblDate">
+          <thead>
+            <tr>
+              <th scope="col">Tanggal</th>
+              <th scope="col">Hari</th>
+              <th scope="col" class="num">Entri</th>
+              <th scope="col" class="num">Orang</th>
+              <th scope="col" class="num">Line</th>
+              <th scope="col" class="num">Durasi</th>
+              <th scope="col" class="num">Line/jam</th>
+              <th scope="col">Sumber</th>
+            </tr>
+          </thead>
+          <tbody id="tblDateBody"></tbody>
+          <tfoot id="tblDateFoot"></tfoot>
+        </table>
+      </div>
+    </article>
+
+  </section>
+
+  <div class="state" id="mainState" role="status" aria-live="polite"></div>
+
+</main>
+
+<footer class="wrap foot">
+  <p>Dashboard lokal &middot; data dari <span id="footStore">penyimpanan</span> &middot; <span id="footTime">–</span></p>
+</footer>
+
+<script src="config.js"></script>
+<script src="dashboard.js" defer></script>
+</body>
+</html>
