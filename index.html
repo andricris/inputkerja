@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Rekap Durasi Kerja</title>
 <meta name="description" content="Pencatatan dan rekap durasi kerja per orang untuk dua proses: draft PO sampai selesai migrasi, dan proses PO reserved CO sampai selesai picklist.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23c2410c'/%3E%3Crect x='7' y='9' width='3' height='14' fill='white'/%3E%3Crect x='13' y='9' width='12' height='3' fill='white'/%3E%3Crect x='13' y='15' width='9' height='3' fill='white'/%3E%3Crect x='13' y='21' width='6' height='2.5' fill='white'/%3E%3C/svg%3E">
@@ -12,6 +15,8 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<a class="skip-link" href="#main">Lewati ke konten</a>
 
 <header class="topbar">
   <div class="wrap topbar-inner">
@@ -27,13 +32,14 @@
         <span id="connDot" class="conn-dot" data-state="loading" aria-hidden="true"></span>
         <span id="connText">Menyiapkan...</span>
       </span>
+      <a class="btn btn-ghost" href="dashboard.html">Dashboard</a>
       <button id="themeToggle" class="btn btn-ghost" type="button" aria-pressed="false">Mode gelap</button>
     </div>
   </div>
   <div class="rule" aria-hidden="true"></div>
 </header>
 
-<main class="wrap">
+<main class="wrap" id="main">
 
   <section class="card" aria-labelledby="formTitle">
     <div class="section-head">
@@ -133,6 +139,10 @@
         <input id="filterQ" type="search" placeholder="Ketik nama penginput">
       </div>
       <div class="toolbar-btns">
+        <label class="check" for="showMissing">
+          <input type="checkbox" id="showMissing" checked>
+          Tampilkan yang belum diisi
+        </label>
         <button id="resetFilter" class="btn btn-ghost" type="button">Reset filter</button>
         <button id="exportBtn" class="btn btn-primary" type="button">Unduh Excel</button>
       </div>

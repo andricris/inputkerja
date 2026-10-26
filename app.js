@@ -14,7 +14,8 @@
     loading: false,
     error: null,
     filters: { from: "", to: "", q: "" },
-    editId: null   // id entri yang sedang diubah, null = mode tambah
+    editId: null,   // id entri yang sedang diubah, null = mode tambah
+    showMissing: true // tampilkan baris 0 untuk nama yang belum input di tanggal itu
   };
 
   // Nomor urut load: hasil request lama yang baru sampai dibuang supaya
@@ -265,6 +266,72 @@
     return rows.reduce(function (s, r) { return s + (Number(r[key]) || 0); }, 0);
   }
 
+  // Daftar orang yang pernah tercatat. Dipakai untuk menandai siapa yang
+  // belum mengisi pada suatu tanggal.
+  function roster() {
+    var seen = {};
+    var names = [];
+    state.records.forEach(function (r) {
+      var key = r.nama.toLowerCase();
+      if (r.nama && !seen[key]) { seen[key] = true; names.push(r.nama); }
+    });
+    return names.sort(function (a, b) { return a.localeCompare(b, "id"); });
+  }
+
+  function sortRows(a, b) {
+    if (a.tanggal !== b.tanggal) return String(b.tanggal || "").localeCompare(String(a.tanggal || ""));
+    return a.nama.localeCompare(b.nama, "id");
+  }
+
+  /**
+   * Gabungkan entri nyata dengan baris "belum diisi".
+   * Tanggal acuan diambil dari seluruh data dalam rentang filter (tanpa
+   * melihat filter nama), supaya orang yang belum input sama sekali pada
+   * tanggal itu tetap muncul sebagai baris nol dan bisa langsung diisi.
+   */
+  function withMissing(realRows) {
+    if (!state.showMissing) return { rows: realRows, missing: 0 };
+
+    var f = state.filters;
+    var q = f.q.trim().toLowerCase();
+
+    var dates = {};
+    var ada = {};
+    state.records.forEach(function (r) {
+      if (f.from && r.tanggal < f.from) return;
+      if (f.to && r.tanggal > f.to) return;
+      dates[r.tanggal] = true;
+      ada[r.tanggal] = ada[r.tanggal] || {};
+      ada[r.tanggal][r.nama.toLowerCase()] = true;
+    });
+
+    var names = roster().filter(function (n) {
+      return !q || n.toLowerCase().indexOf(q) !== -1;
+    });
+
+    var out = realRows.slice();
+    var missing = 0;
+    Object.keys(dates).forEach(function (tgl) {
+      names.forEach(function (nama) {
+        if (ada[tgl] && ada[tgl][nama.toLowerCase()]) return;
+        missing++;
+        out.push({
+          id: null,
+          missing: true,
+          tanggal: tgl,
+          nama: nama,
+          jumlah_line: 0,
+          d1_mulai: "", d1_selesai: "", d1_menit: 0,
+          d2_mulai: "", d2_selesai: "", d2_menit: 0,
+          total_menit: 0
+        });
+      });
+    });
+
+    out.sort(sortRows);
+    return { rows: out, missing: missing };
+  }
+
   /* ---- render ---------------------------------------------------------- */
 
   function setConn(stateName, text) {
@@ -308,10 +375,25 @@
     el.tableWrap.hidden = false;
   }
 
-  function renderTable(rows) {
+  function renderTable(rows, realCount) {
     var body = el.dataBody;
     var html = "";
     rows.forEach(function (r) {
+      if (r.missing) {
+        html += '<tr class="row-missing">' +
+          '<td data-label="Tanggal">' + esc(fmtDate(r.tanggal)) + "</td>" +
+          '<td data-label="Nama" class="name-cell">' + esc(r.nama) + "</td>" +
+          '<td data-label="Line" class="num">0</td>' +
+          '<td data-label="Proses 1"><span class="muted">Belum diisi</span></td>' +
+          '<td data-label="Proses 2"><span class="muted">Belum diisi</span></td>' +
+          '<td data-label="Total" class="num">0m</td>' +
+          '<td class="cell-aksi">' +
+          '<button class="btn btn-ghost btn-fill" type="button"' +
+          ' data-fill-date="' + esc(r.tanggal) + '" data-fill-name="' + esc(r.nama) + '"' +
+          ' aria-label="Isi data ' + esc(r.nama) + " tanggal " + esc(fmtDate(r.tanggal)) + '">Isi</button>' +
+          "</td></tr>";
+        return;
+      }
       html += "<tr>" +
         '<td data-label="Tanggal">' + (r.tanggal ? esc(fmtDate(r.tanggal)) : '<span class="muted">-</span>') + "</td>" +
         '<td data-label="Nama" class="name-cell">' + esc(r.nama) + "</td>" +
@@ -328,9 +410,11 @@
     });
     body.innerHTML = html;
 
+    var missing = rows.length - realCount;
     el.dataFoot.innerHTML = "<tr>" +
       "<td></td>" +
-      "<td>Total " + fmtNumber(rows.length) + " entri</td>" +
+      "<td>Total " + fmtNumber(realCount) + " entri" +
+      (missing > 0 ? ' <span class="muted">· ' + fmtNumber(missing) + " belum diisi</span>" : "") + "</td>" +
       '<td class="num">' + fmtNumber(sumOf(rows, "jumlah_line")) + "</td>" +
       '<td class="muted">' + fmtDuration(sumOf(rows, "d1_menit")) + "</td>" +
       '<td class="muted">' + fmtDuration(sumOf(rows, "d2_menit")) + "</td>" +
@@ -357,14 +441,16 @@
 
   function render() {
     var all = state.records;
-    var rows = getFiltered();
+    var real = getFiltered();
+    var built = withMissing(real);
+    var rows = built.rows;
 
     el.footStore.textContent = MODE === "sheet" ? "Google Sheets" : "browser ini (mode lokal)";
 
     el.stats.hidden = all.length === 0 || !!state.error;
-    el.statCount.textContent = fmtNumber(rows.length);
-    el.statLine.textContent = fmtNumber(sumOf(rows, "jumlah_line"));
-    el.statDur.textContent = fmtDuration(sumOf(rows, "total_menit"));
+    el.statCount.textContent = fmtNumber(real.length);
+    el.statLine.textContent = fmtNumber(sumOf(real, "jumlah_line"));
+    el.statDur.textContent = fmtDuration(sumOf(real, "total_menit"));
 
     if (state.loading) {
       el.rekapMeta.textContent = "Memuat data...";
@@ -373,13 +459,14 @@
     } else if (all.length === 0) {
       el.rekapMeta.textContent = "Belum ada data tercatat.";
     } else {
-      el.rekapMeta.textContent = "Menampilkan " + fmtNumber(rows.length) +
-        " dari " + fmtNumber(all.length) + " entri.";
+      el.rekapMeta.textContent = "Menampilkan " + fmtNumber(real.length) +
+        " dari " + fmtNumber(all.length) + " entri" +
+        (built.missing ? " · " + fmtNumber(built.missing) + " belum diisi" : "") + ".";
     }
 
     renderStates(rows, all.length);
     if (!state.loading && !state.error && all.length > 0 && rows.length > 0) {
-      renderTable(rows);
+      renderTable(rows, real.length);
     } else {
       el.dataBody.innerHTML = "";
       el.dataFoot.innerHTML = "";
@@ -466,7 +553,7 @@
     state.editId = id;
     el.editBanner.hidden = false;
     el.editBannerText.textContent = "Mode ubah data \"" + label +
-      "\" — ubah isian di bawah, lalu tekan Simpan perubahan.";
+      "\": ubah isian di bawah, lalu tekan Simpan perubahan.";
     el.submitBtn.textContent = "Simpan perubahan";
   }
 
@@ -505,6 +592,26 @@
       el.entryForm.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     el.nama.focus();
+  }
+
+  // Baris "belum diisi" -> isi form dengan nama + tanggal tersebut.
+  function onFill(date, name) {
+    clearEditMode();
+    clearFormError();
+    el.nama.value = name;
+    el.tanggal.value = date;
+    el.jumlah_line.value = "0";
+    el.d1_mulai.value = "";
+    el.d1_selesai.value = "";
+    el.d2_mulai.value = "";
+    el.d2_selesai.value = "";
+    updatePreviews();
+
+    if (typeof el.entryForm.scrollIntoView === "function") {
+      el.entryForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    el.jumlah_line.focus();
+    if (el.jumlah_line.select) el.jumlah_line.select();
   }
 
   async function onSubmit(e) {
@@ -702,7 +809,7 @@
       "formError", "totalPreview", "submitBtn",
       "editBanner", "editBannerText", "editCancel",
       "rekapMeta", "stats", "statCount", "statLine", "statDur",
-      "filterFrom", "filterTo", "filterQ", "resetFilter", "exportBtn",
+      "filterFrom", "filterTo", "filterQ", "resetFilter", "exportBtn", "showMissing",
       "tableStates", "tableWrap", "dataBody", "dataFoot", "footStore"
     ].forEach(function (id) { el[id] = document.getElementById(id); });
   }
@@ -748,7 +855,17 @@
 
     el.exportBtn.addEventListener("click", onExport);
 
+    el.showMissing.addEventListener("change", function () {
+      state.showMissing = el.showMissing.checked;
+      render();
+    });
+
     el.dataBody.addEventListener("click", function (e) {
+      var fill = e.target.closest("[data-fill-date]");
+      if (fill) {
+        onFill(fill.getAttribute("data-fill-date"), fill.getAttribute("data-fill-name"));
+        return;
+      }
       var del = e.target.closest("[data-del]");
       if (del) { onDelete(del.getAttribute("data-del")); return; }
       var ed = e.target.closest("[data-edit]");

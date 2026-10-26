@@ -5,8 +5,9 @@
   --ink: #1b1a16;
   --ink-soft: #57534a;
   --line: #dad4c8;
-  --line-strong: #b9b2a3;
+  --line-strong: #8c8577;
   --accent: #c2410c;
+  --accent-strong: #a3350a;
   --accent-ink: #ffffff;
   --accent-soft: #fbe9e0;
   --ok: #2f6b3a;
@@ -29,8 +30,9 @@ html[data-theme="dark"] {
   --ink: #f0ece3;
   --ink-soft: #a9a396;
   --line: #35322a;
-  --line-strong: #4a463b;
+  --line-strong: #7a7362;
   --accent: #f97316;
+  --accent-strong: #f97316;
   --accent-ink: #1b1a16;
   --accent-soft: #34231a;
   --ok: #6cc27f;
@@ -83,6 +85,37 @@ p { margin: 0; }
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }
+
+/* Input tanggal/jam memindahkan fokus ke segmen internalnya, dan :focus-visible
+   tidak selalu ikut aktif di sana. :focus menjaga ring tetap terlihat. */
+input:focus,
+input:focus-within,
+select:focus,
+select:focus-within,
+textarea:focus,
+textarea:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Lompat ke konten: elemen fokus pertama, tersembunyi sampai dipakai. */
+.skip-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  position: absolute;
+  left: 12px;
+  top: -64px;
+  z-index: 50;
+  padding: 10px 14px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  text-decoration: none;
+}
+.skip-link:focus { top: 12px; }
 
 /* Header --------------------------------------------------------------- */
 
@@ -164,11 +197,19 @@ html[data-theme="dark"] .brand-mark { background: var(--accent); color: var(--ac
   font-weight: 500;
   font-size: 14.5px;
   padding: 9px 16px;
-  min-height: 40px;
+  min-height: 44px;
   border-radius: var(--r-sm);
   border: 1px solid transparent;
   cursor: pointer;
   transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+}
+
+/* Tautan yang dibentuk sebagai tombol (mis. navigasi ke Dashboard). */
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .btn-primary {
@@ -203,18 +244,18 @@ html[data-theme="dark"] .brand-mark { background: var(--accent); color: var(--ac
 
 .btn-edit,
 .btn-del {
-  padding: 5px 11px;
-  min-height: 32px;
+  padding: 6px 12px;
+  min-height: 44px;
   font-size: 13px;
   color: var(--ink-soft);
-  border-color: var(--line);
+  border-color: var(--line-strong);
 }
-.btn-edit:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.btn-edit:hover { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent); }
 .btn-del:hover { background: var(--err-soft); color: var(--err); border-color: var(--err); }
 
 .btn-sm {
-  padding: 5px 11px;
-  min-height: 30px;
+  padding: 6px 12px;
+  min-height: 44px;
   font-size: 13px;
 }
 
@@ -246,7 +287,6 @@ main { padding-block: 24px 8px; }
   border-radius: var(--r-md);
   padding: 22px;
   margin-bottom: 20px;
-  box-shadow: var(--shadow);
 }
 
 .section-head { margin-bottom: 18px; }
@@ -278,7 +318,7 @@ input[type="number"], input[type="search"] {
   border: 1px solid var(--line-strong);
   border-radius: var(--r-sm);
   padding: 9px 11px;
-  min-height: 40px;
+  min-height: 44px;
   width: 100%;
 }
 input[type="date"], input[type="time"], input[type="number"] {
@@ -337,7 +377,7 @@ input[aria-invalid="true"] { border-color: var(--err); background: var(--err-sof
   border: 1px dashed var(--line-strong);
   border-radius: var(--r-sm);
   padding: 9px 11px;
-  min-height: 40px;
+  min-height: 44px;
   display: flex;
   align-items: center;
 }
@@ -411,6 +451,23 @@ input[aria-invalid="true"] { border-color: var(--err); background: var(--err-sof
 .field-sm { flex: 0 0 auto; }
 .field-sm.grow { flex: 1 1 200px; }
 .toolbar-btns { display: flex; gap: 10px; margin-left: auto; }
+
+/* Saklar tampilan baris kosong. */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
 
 /* States --------------------------------------------------------------- */
 
@@ -498,6 +555,22 @@ tfoot td {
 tfoot td.num { font-family: var(--font-mono); }
 
 .name-cell { font-weight: 500; }
+
+/* Baris untuk nama yang belum mengisi pada tanggal tersebut: nol, bisa diisi. */
+tbody tr.row-missing { background: var(--surface-2); }
+tbody tr.row-missing td { color: var(--ink-soft); }
+tbody tr.row-missing .name-cell { color: var(--ink); }
+tbody tr.row-missing:hover { background: var(--surface-2); }
+
+.btn-fill {
+  padding: 6px 16px;
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--accent-strong);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.btn-fill:hover { background: var(--accent); color: var(--accent-ink); }
 
 /* Footer --------------------------------------------------------------- */
 
