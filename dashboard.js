@@ -112,16 +112,32 @@
     return m + "m";
   }
 
-  function fmtNumber(n) {
+function fmtNumber(n) {
     var v = Number(n);
     if (isNaN(v)) return "0";
     return v.toLocaleString("id-ID");
   }
 
-  function fmtDecimal(n) {
+  // Menit untuk kalimat saving, dibulatkan ke satuan menit.
+  function fmtMinutes(v) {
+    var n = Math.round(Number(v) || 0);
+    if (n === 0) return "0 menit";
+    return fmtNumber(n) + " menit";
+  }
+
+function fmtDecimal(n) {
     var v = Number(n);
     if (!isFinite(v)) return "0";
     return v.toLocaleString("id-ID", { maximumFractionDigits: 1 });
+  }
+
+  // Dua desimal, tanpa ",00" untuk angka bulat. Dipakai di kartu perbandingan
+  // supaya angka besar dan angka di rumus selalu identik.
+  function num2(n) {
+    var v = Number(n);
+    if (!isFinite(v)) return "0";
+    return v.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      .replace(/,00$/, "");
   }
 
   function fmtDate(iso) {
@@ -171,6 +187,34 @@
       m.get(k).push(r);
     });
     return m;
+  }
+
+  // Catatan kecil ala komentar Excel: muncul saat hover, bisa dibuka dengan klik
+  // atau Enter/Space, ditutup dengan Escape.
+  function tip(text, note, alignRight) {
+    return '<span class="tip-wrap' + (alignRight ? " tip-right" : "") + '">' +
+      '<button type="button" class="tip" aria-expanded="false" aria-label="Penjelasan perhitungan: ' +
+      esc(text) + '">' + esc(text) + "</button>" +
+      '<span class="tip-bubble" role="note">' + esc(note) + "</span></span>";
+  }
+
+  // Uraian konversi menit ke jam:menit, dipakai sebagai isi catatan.
+  function noteDurasi(menit) {
+    var jam = menit / 60;
+    var bulat = Math.floor(jam);
+    var sisa = jam - bulat;
+    var sisaMenit = Math.round(sisa * 60);
+    var quot = String(Math.round(jam * 10000) / 10000).replace(".", ",");
+    var frac = String(Math.round(sisa * 10000) / 10000).replace(".", ",");
+    return fmtNumber(menit) + " menit ÷ 60 = " + quot + " jam\n" +
+      bulat + " jam + (" + frac + " × 60 = " + sisaMenit + " menit) = " +
+      fmtDuration(menit) + "\nDibulatkan: " + num2(jam) + " jam";
+  }
+
+  // Uraian rata-rata per entri: total menit dibagi jumlah entri.
+  function noteAvg(menit, entri) {
+    return "Total menit = jumlah menit Proses 1 + Proses 2 di seluruh entri\n" +
+      fmtNumber(menit) + " menit ÷ " + entri + " entri = " + num2(menit / entri) + " menit";
   }
 
   function palette() {
@@ -466,7 +510,7 @@
     var app = rows.filter(function (r) { return r.tanggal >= APP_START; });
     var man = rows.filter(function (r) { return r.tanggal < APP_START; });
 
-    function blok(label, g, cls) {
+function blok(label, g, cls) {
       var n = g.length;
       var men = sum(g, "d1_menit") + sum(g, "d2_menit");
       var line = sum(g, "jumlah_line");
@@ -475,6 +519,9 @@
         avgMenit: n ? men / n : 0,
         avgP1: n ? sum(g, "d1_menit") / n : 0,
         avgP2: n ? sum(g, "d2_menit") / n : 0,
+        // Waktu per line: total detik dibagi jumlah line.
+        secPerLine: line > 0 ? (men * 60) / line : 0,
+        minPerLine: line > 0 ? men / line : 0,
         linePerJam: men > 0 ? line / (men / 60) : 0
       };
     }
@@ -484,46 +531,130 @@
     var totalMenit = a.menit + m.menit;
 
     function angka(b) {
-      if (!b.entri) return '<span class="compare-v">–</span>';
-      var jam = b.avgMenit >= 60;
-      return '<span class="compare-v">' + esc(fmtDecimal(jam ? b.avgMenit / 60 : b.avgMenit)) +
-        "<small>" + (jam ? "jam" : "menit") + "</small></span>";
+      if (!b.entri || !b.line) return '<span class="compare-v">–</span>';
+      return '<span class="compare-v">' + esc(num2(b.secPerLine)) + "<small>detik/line</small></span>";
     }
 
     function sisi(b) {
       var pct = totalMenit ? Math.round(b.menit / totalMenit * 100) : 0;
+      var rumus = b.line
+        ? '<span class="compare-rumus">' + fmtNumber(b.menit * 60) + " detik ÷ " +
+          fmtNumber(b.line) + " line</span>"
+        : '<span class="compare-rumus">belum ada line</span>';
       return '<div class="compare-side">' +
         '<span class="compare-k">' + esc(b.label) + "</span>" +
         angka(b) +
-        '<span class="compare-s">rata-rata per entri</span>' +
+        '<span class="compare-s">waktu per line</span>' +
+        rumus +
         '<span class="compare-s">' + fmtNumber(b.entri) + " entri · " + fmtNumber(b.line) +
-        " line · " + esc(fmtDuration(b.menit)) + "</span>" +
-        '<span class="compare-s">P1 ' + esc(fmtDuration(b.avgP1)) + " · P2 " +
-        esc(fmtDuration(b.avgP2)) + " · " + fmtNumber(Math.round(b.linePerJam)) + " line/jam</span>" +
+        " line · " + tip(fmtDuration(b.menit), noteDurasi(b.menit), b.cls === "app") + "</span>" +
+        '<span class="compare-s">rata-rata per entri ' + tip(num2(b.avgMenit) + " menit", noteAvg(b.menit, b.entri), b.cls === "app") +
+        " · P1 " + esc(fmtDuration(b.avgP1)) + " · P2 " + esc(fmtDuration(b.avgP2)) + "</span>" +
         '<div class="compare-track"><div class="compare-fill" style="width:' + pct +
         "%;background:" + (b.cls === "app" ? "var(--accent)" : "var(--muted-bar)") + '"></div></div>' +
         "</div>";
     }
 
     var html = sisi(m);
+    var rumusSelisih = "";
 
-    if (a.entri && m.entri) {
-      var diff = a.avgMenit - m.avgMenit;
-      var pctDiff = m.avgMenit ? (diff / m.avgMenit) * 100 : 0;
+    if (a.entri && m.entri && a.line && m.line) {
+      var diff = a.secPerLine - m.secPerLine;
+      var pctDiff = m.secPerLine ? (diff / m.secPerLine) * 100 : 0;
       var turun = diff <= 0;
       html += '<div class="compare-delta ' + (turun ? "down" : "up") + '">' +
-        '<span class="delta-big">' + (turun ? "−" : "+") + fmtDecimal(Math.abs(diff)) + " menit</span>" +
+        '<span class="delta-big">' + (turun ? "−" : "+") + esc(num2(Math.abs(diff))) + " detik/line</span>" +
         '<span class="delta-sub">' + (pctDiff > 0 ? "+" : "−") +
-        fmtDecimal(Math.abs(pctDiff)) + "% " + (turun ? "lebih cepat" : "lebih lama") + "</span></div>";
+        esc(num2(Math.abs(pctDiff))) + "% " + (turun ? "lebih cepat" : "lebih lama") + "</span></div>";
+
+      rumusSelisih = "Rumus selisih: (" + num2(a.secPerLine) + " − " + num2(m.secPerLine) +
+        ") ÷ " + num2(m.secPerLine) + " = " + (pctDiff > 0 ? "+" : "−") +
+        num2(Math.abs(pctDiff)) + "%.";
     } else {
       html += '<div class="compare-delta"><span class="delta-sub">belum ada pembanding</span></div>';
     }
 
     html += sisi(a);
-    html += '<div class="compare-foot">Data sebelum ' + esc(fmtDate(APP_START)) +
-      " dianggap input manual. Perbandingan memakai rata-rata per entri, bukan per orang.</div>";
+
+    html += '<div class="compare-foot">' +
+      (rumusSelisih ? rumusSelisih + "<br>" : "") +
+      "Waktu per line = (jumlah total menit × 60) ÷ jumlah line kelompok. " +
+      "Data sebelum " + esc(fmtDate(APP_START)) +
+      " dianggap input manual. Perbandingan memakai waktu per line, bukan per orang.</div>";
 
     el.compareBox.innerHTML = html;
+  }
+
+  /* ---- saving man-hour -------------------------------------------------- */
+
+  function renderManHour() {
+    var rows = state.rows;
+    var app = rows.filter(function (r) { return r.tanggal >= APP_START; });
+    var man = rows.filter(function (r) { return r.tanggal < APP_START; });
+
+    var hariMan = {}, hariApp = {};
+    man.forEach(function (r) { hariMan[r.tanggal] = 1; });
+    app.forEach(function (r) { hariApp[r.tanggal] = 1; });
+    var nMan = Object.keys(hariMan).length;
+    var nApp = Object.keys(hariApp).length;
+
+    if (!nMan || !nApp) {
+      el.mhSentence.textContent = "Kartu ini membandingkan dua periode. Pilih sumber data \"Semua\" dan rentang tanggal yang mencakup sebelum dan sesudah " +
+        fmtDate(APP_START) + ".";
+      el.mhGrid.hidden = true;
+      el.mhCalc.hidden = true;
+      return;
+    }
+
+    var menMan = sum(man, "d1_menit") + sum(man, "d2_menit");
+    var menApp = sum(app, "d1_menit") + sum(app, "d2_menit");
+    var lineMan = sum(man, "jumlah_line");
+    var lineApp = sum(app, "jumlah_line");
+
+    var jamMan = menMan / 60 / nMan;
+    var jamApp = menApp / 60 / nApp;
+    var hematJam = jamMan - jamApp;
+    var hematMenit = hematJam * 60;
+
+    var per1000Man = lineMan ? (menMan / 60) / lineMan * 1000 : 0;
+    var per1000App = lineApp ? (menApp / 60) / lineApp * 1000 : 0;
+    var hemat1000 = (per1000Man - per1000App) * 60;
+
+    var setahun = hematJam * 240;
+
+    function barisJam(label, menit, hari) {
+      var jam = menit / 60;
+      return '<div class="mh-row"><span>' + esc(label) + '</span><span class="mh-eq">' +
+        fmtNumber(menit) + " menit ÷ 60 = " + num2(jam) + " jam ÷ " + hari +
+        " hari = <strong>" + num2(hari ? jam / hari : 0) + " jam/hari</strong></span></div>";
+    }
+
+    el.mhGrid.hidden = false;
+    el.mhCalc.hidden = false;
+    el.mhCalc.innerHTML =
+      barisJam("Manual", menMan, nMan) +
+      barisJam("Aplikasi", menApp, nApp) +
+      '<div class="mh-row"><span>Selisih</span><span class="mh-eq">' +
+      num2(jamMan) + " − " + num2(jamApp) + " = <strong>" + num2(hematJam) +
+      " jam/hari = " + fmtMinutes(hematMenit) + "</strong></span></div>";
+
+    el.mhDays.textContent = nMan + " vs " + nApp + " hari";
+    el.mhPerDay.textContent = fmtMinutes(hematMenit);
+    el.mhPer1000.textContent = fmtMinutes(hemat1000);
+    el.mhYear.textContent = fmtNumber(Math.round(setahun)) + " jam (" + num2(setahun / 8) + " hari kerja)";
+
+    if (hematJam <= 0.005) {
+      el.mhSentence.innerHTML = "Belum ada penurunan man-hour pada data ini: <strong>" +
+        esc(num2(jamMan)) + " jam</strong> menjadi <strong>" + esc(num2(jamApp)) +
+        " jam</strong> per hari kerja.";
+      return;
+    }
+
+    el.mhSentence.innerHTML =
+      "Sejak memakai aplikasi, satu hari kerja tim turun dari <strong>" + esc(num2(jamMan)) +
+      " jam</strong> menjadi <strong>" + esc(num2(jamApp)) +
+      " jam</strong> untuk output yang sama, hemat <strong>" + esc(fmtMinutes(hematMenit)) +
+      "</strong> per hari kerja, atau <strong>" + esc(num2(hematJam)) + " man-hour</strong>.";
   }
 
   /* ---- KPI ------------------------------------------------------------- */
@@ -655,6 +786,7 @@
 
     if (!rows.length) {
       el.compareCard.hidden = true;
+      el.manHourCard.hidden = true;
       el.kpis.hidden = true;
       el.grid.hidden = true;
       showState(state.all.length
@@ -666,6 +798,7 @@
     }
 
     el.compareCard.hidden = false;
+    el.manHourCard.hidden = false;
     el.kpis.hidden = false;
     el.grid.hidden = false;
     showState("");
@@ -682,7 +815,8 @@
     renderDonut();
     renderPerson();
     renderLine();
-    renderCompare();
+renderCompare();
+    renderManHour();
     renderTables();
   }
 
@@ -723,7 +857,7 @@
       "kpis", "kEntri", "kEntriSub", "kLine", "kLineSub", "kDur", "kDurSub",
       "kOrang", "kOrangSub", "kAvg", "kAvgSub", "kRate", "kRateSub",
       "grid", "chartDaily", "chartDonut", "chartPerson", "chartLine",
-      "compareCard", "compareBox", "tblPersonBody", "tblPersonFoot", "tblDateBody", "tblDateFoot",
+      "compareCard", "compareBox", "manHourCard", "mhSentence", "mhCalc", "mhGrid", "mhDays", "mhPerDay", "mhPer1000", "mhYear", "tblPersonBody", "tblPersonFoot", "tblDateBody", "tblDateFoot",
       "mainState", "footStore", "footTime"
     ].forEach(function (id) { el[id] = document.getElementById(id); });
   }
@@ -766,6 +900,7 @@
       state.rows = [];
       setConn("error", "Gagal memuat data");
       el.compareCard.hidden = true;
+      el.manHourCard.hidden = true;
       el.kpis.hidden = true;
       el.grid.hidden = true;
       el.metaPeriode.textContent = "gagal memuat";
@@ -777,9 +912,36 @@
   }
 
   function bind() {
-    el.themeToggle.addEventListener("click", function () {
+el.themeToggle.addEventListener("click", function () {
       var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
       applyTheme(next);
+    });
+
+    // Catatan perhitungan: klik untuk buka, klik di luar atau Escape untuk tutup.
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest(".tip");
+      var wraps = document.querySelectorAll(".tip-wrap.is-open");
+      for (var i = 0; i < wraps.length; i++) {
+        if (!btn || wraps[i] !== btn.parentNode) {
+          wraps[i].classList.remove("is-open");
+          var lama = wraps[i].querySelector(".tip");
+          if (lama) lama.setAttribute("aria-expanded", "false");
+        }
+      }
+      if (!btn) return;
+      var wrap = btn.parentNode;
+      var terbuka = wrap.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", terbuka ? "true" : "false");
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape") return;
+      var wraps = document.querySelectorAll(".tip-wrap.is-open");
+      for (var i = 0; i < wraps.length; i++) {
+        wraps[i].classList.remove("is-open");
+        var b = wraps[i].querySelector(".tip");
+        if (b) b.setAttribute("aria-expanded", "false");
+      }
     });
 
     el.fFrom.addEventListener("change", function () {

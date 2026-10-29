@@ -75,10 +75,37 @@
 
   <section class="card card-hero compare-card" id="compareCard" aria-labelledby="compareTitle">
     <div class="card-head">
-      <h2 id="compareTitle">Rata-rata per entri: manual vs aplikasi</h2>
-      <span class="card-sub">sebelum dan sesudah 19/10/2026</span>
+      <h2 id="compareTitle">Waktu per line: manual vs aplikasi</h2>
+      <span class="card-sub">detik per line, sebelum dan sesudah 19/10/2026</span>
     </div>
     <div id="compareBox" class="compare"></div>
+  </section>
+
+  <section class="card mh-card" id="manHourCard" aria-labelledby="mhTitle">
+    <div class="card-head">
+      <h2 id="mhTitle">Saving man-hour</h2>
+      <span class="card-sub">dihitung dari data yang sedang tampil</span>
+    </div>
+    <p class="mh-sentence" id="mhSentence"></p>
+    <div class="mh-calc" id="mhCalc"></div>
+    <div class="mh-grid" id="mhGrid">
+      <div class="mh-stat">
+        <span class="mh-k">Hari kerja dibandingkan</span>
+        <span class="mh-v" id="mhDays">–</span>
+      </div>
+      <div class="mh-stat">
+        <span class="mh-k">Hemat per hari kerja</span>
+        <span class="mh-v" id="mhPerDay">–</span>
+      </div>
+      <div class="mh-stat">
+        <span class="mh-k">Hemat per 1.000 line</span>
+        <span class="mh-v" id="mhPer1000">–</span>
+      </div>
+      <div class="mh-stat">
+        <span class="mh-k">Proyeksi 1 tahun (240 hari kerja)</span>
+        <span class="mh-v" id="mhYear">–</span>
+      </div>
+    </div>
   </section>
 
   <section class="kpis" id="kpis" aria-label="Ringkasan angka">
