@@ -1,0 +1,3 @@
+# Hasil state/artifak HyperFrames yang dibuat saat check dan present.
+# Tidak perlu di-version; dibuat ulang otomatis setiap menjalankan CLI.
+.hyperframes/

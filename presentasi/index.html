@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --paper: #efebe3;
+        --surface: #ffffff;
+        --ink: #1b1a16;
+        --soft: #57534a;
+        --line: #d3ccc0;
+        --accent: #c2410c;
+        --accent-soft: #fbe9e0;
+        --teal: #0f766e;
+        --ok: #2f6b3a;
+        --font-ui: "Segoe UI", system-ui, -apple-system, sans-serif;
+        --font-mono: Consolas, "Courier New", ui-monospace, monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: var(--paper); color: var(--ink);
+        font-family: var(--font-ui);
+      }
+      .slide {
+        position: absolute; inset: 0;
+        width: 1920px; height: 1080px;
+        padding: 96px 112px;
+        display: flex; flex-direction: column;
+        background: var(--paper);
+      }
+      .slide::after {
+        content: ""; position: absolute; left: 112px; right: 112px; top: 74px;
+        height: 5px; opacity: .55;
+        background-image: repeating-linear-gradient(90deg, #a49b8b 0 1px, transparent 1px 14px);
+      }
+      .kicker {
+        font-family: var(--font-mono); font-size: 28px; letter-spacing: .12em;
+        text-transform: uppercase; color: var(--accent); margin-bottom: 18px;
+      }
+      h1 { font-size: 96px; line-height: 1.04; letter-spacing: -.03em; font-weight: 700; }
+      h2 { font-size: 62px; line-height: 1.1; letter-spacing: -.02em; font-weight: 600; margin-bottom: 26px; }
+      .lead { font-size: 42px; line-height: 1.35; color: var(--soft); max-width: 1400px; }
+      .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+      .footer-line {
+        margin-top: auto; padding-top: 26px; border-top: 1px solid var(--line);
+        font-family: var(--font-mono); font-size: 28px; color: var(--soft);
+        display: flex; justify-content: space-between;
+      }
+      .cols { display: flex; gap: 56px; }
+      .col { flex: 1; }
+      .card {
+        background: var(--surface); border: 1px solid var(--line);
+        border-radius: 8px; padding: 40px 44px;
+      }
+      .card-accent { border-color: var(--accent); box-shadow: 0 14px 40px rgba(27, 26, 22, .10); }
+      .label { font-family: var(--font-mono); font-size: 28px; color: var(--soft); }
+      .value { font-family: var(--font-mono); font-size: 88px; line-height: 1; font-weight: 600; }
+      .delta { color: var(--ok); font-family: var(--font-mono); font-size: 34px; font-weight: 600; }
+      .rule-note {
+        margin-top: 34px; padding: 26px 30px; border: 1px solid var(--line);
+        border-radius: 8px; background: var(--surface);
+        font-family: var(--font-mono); font-size: 30px; color: var(--ink);
+      }
+      ul.list { margin-top: 12px; display: grid; gap: 24px; }
+      ul.list li {
+        list-style: none; font-size: 40px; line-height: 1.3; color: var(--ink);
+        padding-left: 54px; position: relative;
+      }
+      ul.list li::before {
+        content: ""; position: absolute; left: 0; top: 22px;
+        width: 22px; height: 3px; background: var(--accent);
+      }
+      ul.list li span { color: var(--soft); }
+      table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+      th, td { text-align: left; padding: 20px 16px; border-bottom: 1px solid var(--line); font-size: 36px; }
+      th {
+        font-family: var(--font-mono); font-size: 28px; letter-spacing: .06em;
+        text-transform: uppercase; color: var(--soft); border-bottom-color: #b9b2a3;
+      }
+      td.num, th.num { text-align: right; font-family: var(--font-mono); }
+      tr.total td { border-bottom: none; font-weight: 600; background: #f7f5f0; }
+      .tag {
+        display: inline-block; padding: 4px 14px; border-radius: 999px;
+        font-family: var(--font-mono); font-size: 24px; border: 1px solid var(--line);
+        color: var(--soft);
+      }
+      .tag-app { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+      .bar-row { display: flex; align-items: center; gap: 22px; margin-top: 16px; }
+      .bar-name { width: 240px; font-size: 34px; }
+      .bar-track { flex: 1; height: 24px; background: #e3ddd2; border-radius: 4px; overflow: hidden; }
+      .bar-fill { height: 100%; background: var(--accent); }
+      .bar-val { width: 250px; text-align: right; font-family: var(--font-mono); font-size: 30px; }
+      .warn { color: #b42318; }
+      .big { font-family: var(--font-mono); font-size: 150px; line-height: 1; letter-spacing: -.04em; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="root" data-start="0" data-duration="80" data-width="1920" data-height="1080" style="position: relative; width: 1920px; height: 1080px; overflow: hidden">
+    <!-- 1 -->
+    <section id="s1" class="slide" data-hold data-composition-id="s1" data-start="0" data-duration="10"
+             data-label="Judul" data-width="1920" data-height="1080">
+      <p class="kicker" data-anim>Rekap durasi kerja · Oktober 2026</p>
+      <h1 data-anim>Dari catatan manual<br />ke data terukur</h1>
+      <p class="lead" data-anim style="margin-top: 38px">
+        73 entri · 22.168 line · 4 orang · 20 hari kerja.<br />
+        Yang berubah bukan cara kerja, tapi cara mengukurnya.
+      </p>
+      <div class="footer-line"><span>Sebelum 19 Okt: manual</span><span>Sesudah 19 Okt: aplikasi</span></div>
+    </section>
+
+    <!-- 2 -->
+    <section id="s2" class="slide" data-hold data-composition-id="s2" data-start="10" data-duration="10"
+             data-label="Masalah" data-width="1920" data-height="1080">
+      <p class="kicker" data-anim>Masalah</p>
+      <h2 data-anim>Tiga hal yang tidak bisa dijawab catatan manual</h2>
+      <ul class="list">
+        <li data-anim>Berapa lama satu line dikerjakan? <span>Tidak ada angkanya.</span></li>
+        <li data-anim>Siapa yang perlu dibantu? <span>Hanya tebak-tebakan.</span></li>
+        <li data-anim>Berapa kapasitas yang bisa dijanjikan? <span>Tidak ada dasar.</span></li>
+      </ul>
+      <div class="footer-line"><span>Sebelum aplikasi</span><span>Catatan hanya menyimpan hasil</span></div>
+    </section>
+
+    <!-- 3 -->
+    <section id="s3" class="slide" data-hold data-composition-id="s3" data-start="20" data-duration="10"
+             data-label="Metode" data-width="1920" data-height="1080">
+      <p class="kicker" data-anim>Metode</p>
+      <h2 data-anim>Yang diukur dan cara menghitungnya</h2>
+      <div class="rule-note" data-anim>
+        Waktu per line = (total menit × 60) ÷ total line
+      </div>
+      <div class="rule-note" data-anim style="margin-top: 18px">
+        Total menit = menit Proses 1 + menit Proses 2, dari selisih jam mulai dan selesai
+      </div>
+      <div class="cols" style="margin-top: 34px">
+        <div class="col card" data-anim>
+          <p class="label">Sampel manual</p>
+          <p class="value">39</p>
+          <p class="label" style="margin-top: 8px">entri · 12.214 line · 11 hari</p>
+        </div>
+        <div class="col card" data-anim>
+          <p class="label">Sampel aplikasi</p>
+          <p class="value">34</p>
+          <p class="label" style="margin-top: 8px">entri · 9.954 line · 9 hari</p>
+        </div>
+        <div class="col card" data-anim>
+          <p class="label">Batas pembanding</p>
+          <p class="value">19/10</p>
+          <p class="label" style="margin-top: 8px">sebelum = manual · sesudah = aplikasi</p>
+        </div>
+      </div>
+      <div class="footer-line"><span>Sumber: sheet rekap yang sama</span><span>Rumus tampil di dashboard</span></div>
+    </section>
+
+    <!-- 4 -->
+    <section id="s4" class="slide" data-hold data-composition-id="s4" data-start="30" data-duration="10"
+             data-label="Sebelum vs sesudah" data-width="1920" data-height="1080">
+      <p class="kicker" data-anim>Sebelum vs sesudah</p>
+      <h2 data-anim>Output harian tetap, jam kerja turun 27%</h2>
+      <table data-anim>
+        <thead>
+          <tr>
+            <th>Ukuran</th>
+            <th class="num">Manual</th>
+            <th class="num">Aplikasi</th>
+            <th class="num">Perubahan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Line per hari</td><td class="num">1.110</td><td class="num">1.106</td><td class="num">−0,4%</td></tr>
+          <tr><td>Jam per hari</td><td class="num">2j 04m</td><td class="num">1j 31m</td><td class="num delta">−27%</td></tr>
+          <tr><td>Waktu per line</td><td class="num">6,69 dtk</td><td class="num">4,93 dtk</td><td class="num delta">−26,3%</td></tr>
+          <tr><td>Median waktu per line</td><td class="num">7,81 dtk</td><td class="num">5,08 dtk</td><td class="num delta">−34,9%</td></tr>
+          <tr class="total"><td>Line per jam</td><td class="num">538</td><td class="num">730</td><td class="num">+35,6%</td></tr>
+        </tbody>
+      </table>
+      <div class="footer-line"><span>20 hari kerja tercatat</span><span>Angka dibulatkan 2 desimal</span></div>
+    </section>
+
+    <!-- 5 -->
+    <section id="s5" class="slide" data-hold data-composition-id="s5" data-start="40" data-duration="10"
+             data-label="Kemenangan utama" data-width="1920" data-height="1080">
+      <p class="kicker" data-anim>Kemenangan utama</p>
+      <h2 data-anim>Pada volume yang sama, waktu hemat 4,9 jam</h2>
+      <div class="cols" style="margin-top: 10px">
+        <div class="col card card-accent" data-anim>
+          <p class="label">Hemat dalam 9 hari aplikasi</p>
+          <p class="big" style="margin-top: 10px">291</p>
+          <p class="label">menit = 4,85 jam</p>
+          <p class="label" style="margin-top: 14px">1.109 menit manual vs 818 menit aktual</p>
+        </div>
+        <div class="col" data-anim>
+          <div class="card">
+            <p class="label">Hemat per 1.000 line</p>
+            <p class="value" style="margin-top: 6px">29,25</p>
+            <p class="label">menit</p>
+          </div>
+          <div class="card" style="margin-top: 24px">
+            <p class="label">Kapasitas bila jam kerja disamakan</p>
+            <p class="value" style="margin-top: 6px">+36%</p>
+            <p class="label">±1.110 menjadi ±1.505 line per hari</p>
+          </div>
+        </div>
+      </div>
+      <div class="footer-line"><span>Dua cara membaca angka yang sama</span><span>Pilih sesuai audiens</span></div>
+    </section>
+
+    <!-- 6 -->
+    <section id="s6" class="slide" data-hold data-composition-id="s6" data-start="50" data-duration="10"
+             data-label="Waktu per line" data-width="1920" data-height="1080">
+      <p class="kicker" data-anim>Waktu per line</p>
+      <h2 data-anim>Dari 6,69 detik menjadi 4,93 detik per line</h2>
+      <div class="cols" style="margin-top: 24px">
+        <div class="col card" data-anim>
+          <p class="label">Manual, sebelum 19/10</p>
+          <p class="value" style="margin-top: 8px">6,69</p>
+          <p class="label">detik per line · 81.660 ÷ 12.214</p>
+        </div>
+        <div class="col card card-accent" data-anim>
+          <p class="label">Aplikasi, sesudah 19/10</p>
+          <p class="value" style="margin-top: 8px">4,93</p>
+          <p class="label">detik per line · 49.080 ÷ 9.954</p>
+        </div>
+        <div class="col card" data-anim>
+          <p class="label">Selisih</p>
+          <p class="value" style="margin-top: 8px">−1,76</p>
+          <p class="delta">−26,25% lebih cepat</p>
+        </div>
+      </div>
+      <div class="rule-note" data-anim>
+        Median 7,81 menjadi 5,08 detik (−34,9%), jadi perbaikan bukan karena satu entri ekstrem
+      </div>
+      <div class="footer-line"><span>Sumber: dashboard, kartu waktu per line</span><span>Rumus bisa dibuka di aplikasi</span></div>
+    </section>
+
+    <!-- 7 -->
+    <section id="s7" class="slide" data-hold data-composition-id="s7" data-start="60" data-duration="10"
+             data-label="Per orang" data-width="1920" data-height="1080">
+      <p class="kicker" data-anim>Per orang</p>
+      <h2 data-anim>Tiga membaik, satu perlu dicek</h2>
+      <table data-anim>
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th class="num">Menit/hari</th>
+            <th class="num">Line/hari</th>
+            <th class="num">Detik/line</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>ANITA</td><td class="num">35 → 24</td><td class="num">353 → 327</td><td class="num">6,02 → 4,49</td></tr>
+          <tr><td>andri</td><td class="num">35 → 21</td><td class="num">201 → 226</td><td class="num">10,33 → 5,47</td></tr>
+          <tr><td>Noval</td><td class="num">42 → 31</td><td class="num">560 → 541</td><td class="num">4,54 → 3,45</td></tr>
+          <tr><td>Nopiyanti</td><td class="num">29 → 20</td><td class="num">200 → 98</td><td class="num warn">8,63 → 12,56</td></tr>
+        </tbody>
+      </table>
+      <div class="rule-note" data-anim>
+        Entri Nopiyanti 26 sampai 29 Oktober berisi 14 dan 15 line per sesi: batch kecil, waktu tetap per sesi mendominasi
+      </div>
+      <div class="footer-line"><span>Bukan penilaian kinerja</span><span>Ini sinyal untuk dicek</span></div>
+    </section>
+
+    <!-- 8 -->
+    <section id="s8" class="slide" data-hold data-composition-id="s8" data-start="70" data-duration="10"
+             data-label="Batas dan tindak lanjut" data-width="1920" data-height="1080">
+      <p class="kicker" data-anim>Batas dan tindak lanjut</p>
+      <h2 data-anim>Yang boleh dan tidak boleh diklaim</h2>
+      <div class="cols">
+        <div class="col" data-anim>
+          <ul class="list">
+            <li>Tidak boleh: "aplikasi membuat 26% lebih cepat" <span>bukan uji terkontrol</span></li>
+            <li>Tidak boleh: peringkat individu <span>sampel 9 hari</span></li>
+            <li>Boleh: "sejak memakai aplikasi, waktu per line tercatat turun 26%, output harian tetap"</li>
+          </ul>
+        </div>
+        <div class="col" data-anim>
+          <div class="card">
+            <p class="label">Tindak lanjut</p>
+            <ul class="list" style="margin-top: 12px">
+              <li>Kumpulkan 4 minggu lagi</li>
+              <li>Cek entri 26 sampai 29 Oktober</li>
+              <li>Tetapkan target 5 detik per line</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-line"><span>Data bisa diaudit</span><span>Rumus tampil di dashboard</span></div>
+    </section>
+
+    </div>
+    <script type="application/hyperframes-slideshow+json">
+      {
+        "slides": [
+          { "sceneId": "s1", "notes": "Buka dengan satu kalimat: output sama, waktu lebih pendek. Jangan langsung ke angka." },
+          { "sceneId": "s2", "notes": "Tiga pertanyaan yang selama ini dijawab dengan perkiraan." },
+          { "sceneId": "s3", "notes": "Tunjukkan rumus. Tekankan sampel dan batas 19 Oktober." },
+          { "sceneId": "s4", "notes": "Baris paling penting: line per hari tetap, jam per hari turun 27%." },
+          { "sceneId": "s5", "notes": "Pilih satu framing sesuai audiens: hemat 4,9 jam atau kapasitas naik 36 persen." },
+          { "sceneId": "s6", "notes": "Sebut median untuk menutup tuduhan outlier." },
+          { "sceneId": "s7", "notes": "Sampaikan apa adanya. Nopiyanti batch kecil, bukan penilaian kinerja." },
+          { "sceneId": "s8", "notes": "Tutup dengan batas klaim dan tiga tindak lanjut." }
+        ]
+      }
+    </script>
+
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+
+        var TOTAL = 80;
+        var scenes = [
+          { id: "s1", start: 0, duration: 10 },
+          { id: "s2", start: 10, duration: 10 },
+          { id: "s3", start: 20, duration: 10 },
+          { id: "s4", start: 30, duration: 10 },
+          { id: "s5", start: 40, duration: 10 },
+          { id: "s6", start: 50, duration: 10 },
+          { id: "s7", start: 60, duration: 10 },
+          { id: "s8", start: 70, duration: 10 }
+        ];
+
+        // Root timeline: satu tween sepanjang durasi deck, jadi playhead bisa di-seek.
+        var tl = gsap.timeline({ paused: true });
+        tl.to({}, { duration: TOTAL });
+        window.__timelines["root"] = tl;
+
+        function fireEntrance(el) {
+          var items = el.querySelectorAll("[data-anim]");
+          if (!items.length) return;
+          gsap.from(items, {
+            opacity: 0,
+            y: 26,
+            duration: 0.5,
+            stagger: 0.09,
+            ease: "power2.out",
+            overwrite: true
+          });
+        }
+
+        var lastActive = null;
+
+        function updateVisibility(t) {
+          for (var i = 0; i < scenes.length; i++) {
+            var s = scenes[i];
+            var el = document.getElementById(s.id);
+            if (!el) continue;
+            var active = t >= s.start && t < s.start + s.duration;
+            el.style.opacity = active ? "1" : "0";
+            el.style.visibility = active ? "visible" : "hidden";
+            el.style.pointerEvents = active ? "auto" : "none";
+            if (active && lastActive !== s.id) {
+              lastActive = s.id;
+              fireEntrance(el);
+            }
+          }
+        }
+
+        window.__hfSetTime = updateVisibility;
+        updateVisibility(0);
+
+        tl.eventCallback("onUpdate", function () {
+          updateVisibility(tl.time());
+        });
+
+        // Manifest scene ke player supaya tombol panah tahu harus seek ke mana.
+        function postTimeline() {
+          parent.postMessage(
+            {
+              source: "hf-preview",
+              type: "timeline",
+              durationInFrames: TOTAL * 30,
+              scenes: scenes
+            },
+            "*"
+          );
+        }
+
+        if (document.readyState === "complete") {
+          setTimeout(postTimeline, 300);
+        } else {
+          window.addEventListener("load", function () {
+            setTimeout(postTimeline, 300);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
