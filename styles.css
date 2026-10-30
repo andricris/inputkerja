@@ -436,6 +436,12 @@ input[aria-invalid="true"] { border-color: var(--err); background: var(--err-sof
   font-weight: 500;
   margin-top: 2px;
 }
+.stat-s {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
 
 /* Toolbar -------------------------------------------------------------- */
 

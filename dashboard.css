@@ -1,5 +1,21 @@
 /* Dashboard Rekap Durasi Kerja. Token visual sama dengan styles.css. */
 :root {
+  /* Tangga tipografi: 12 / 13 / 14 / 16 / 20 / 24 / 40 */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-display: 40px;
+  /* Tangga tipografi: 12 / 13 / 14 / 16 / 20 / 24 / 40 */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-display: 40px;
   --bg: #efebe3;
   --surface: #ffffff;
   --surface-2: #f7f5f0;
@@ -62,7 +78,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-ui);
-  font-size: 16px;
+  font-size: var(--fs-lg);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -110,7 +126,7 @@ textarea:focus-within {
   color: var(--ink);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-sm);
-  font-size: 14px;
+  font-size: var(--fs-md);
   text-decoration: none;
 }
 .skip-link:focus {
@@ -144,7 +160,7 @@ textarea:focus-within {
   background: var(--ink);
   color: var(--surface);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   letter-spacing: 0.06em;
 }
@@ -153,13 +169,13 @@ html[data-theme="dark"] .brand-mark {
   color: var(--accent-ink);
 }
 .brand-text h1 {
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 .brand-sub {
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   margin-top: 2px;
 }
 .topbar-actions {
@@ -172,7 +188,7 @@ html[data-theme="dark"] .brand-mark {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-soft);
 }
 .conn-dot {
@@ -217,7 +233,7 @@ html[data-theme="dark"] .brand-mark {
 .btn {
   font: inherit;
   font-weight: 500;
-  font-size: 14.5px;
+  font-size: var(--fs-md);
   padding: 8px 14px;
   min-height: 44px;
   border-radius: var(--r-sm);
@@ -277,8 +293,8 @@ html[data-theme="dark"] .card-hero {
   margin-bottom: 14px;
 }
 .mh-sentence {
-  max-width: 92ch;
-  font-size: 20px;
+  max-width: 72ch;
+  font-size: var(--fs-xl);
   line-height: 1.55;
   color: var(--ink);
 }
@@ -290,7 +306,7 @@ html[data-theme="dark"] .card-hero {
 .mh-sentence .mh-note {
   display: block;
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-soft);
 }
 /* Rincian hitung: menit ke jam, jam ke per hari, lalu selisihnya. */
@@ -308,7 +324,7 @@ html[data-theme="dark"] .card-hero {
   grid-template-columns: 88px 1fr;
   gap: 10px;
   align-items: baseline;
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 .mh-row > span:first-child {
   color: var(--ink-soft);
@@ -359,7 +375,7 @@ html[data-theme="dark"] .card-hero {
   box-shadow: 0 10px 28px rgba(27, 26, 22, 0.16);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1.55;
   white-space: pre-line;
   text-align: left;
@@ -421,7 +437,7 @@ html[data-theme="dark"] .card-hero {
 }
 .mh-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-top: 16px;
 }
@@ -435,13 +451,26 @@ html[data-theme="dark"] .card-hero {
   background: var(--surface-2);
 }
 .mh-k {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-soft);
 }
 .mh-v {
   font-family: var(--font-mono);
-  font-size: 17px;
+  font-size: var(--fs-lg);
   font-weight: 600;
+}
+
+
+
+/* Di perangkat sentuh, catatan harus mudah ditekan: 44 px. */
+@media (hover: none), (pointer: coarse) {
+  .tip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 .card-head {
   display: flex;
@@ -452,11 +481,11 @@ html[data-theme="dark"] .card-hero {
   margin-bottom: 10px;
 }
 .card-head h2 {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 600;
 }
 .card-sub {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-soft);
   font-family: var(--font-mono);
 }
@@ -477,16 +506,15 @@ html[data-theme="dark"] .card-hero {
   min-width: 0;
 }
 .field label {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--ink-soft);
 }
 .field input,
 .field select {
   font: inherit;
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line-strong);
@@ -501,7 +529,7 @@ html[data-theme="dark"] .card-hero {
 }
 .filter-note {
   margin-top: 10px;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--ink-soft);
   font-family: var(--font-mono);
 }
@@ -523,13 +551,13 @@ html[data-theme="dark"] .card-hero {
   min-width: 0;
 }
 .kpi-k {
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--ink-soft);
 }
 .kpi-v {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: var(--fs-2xl);
   font-weight: 500;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -538,7 +566,7 @@ html[data-theme="dark"] .card-hero {
   text-overflow: ellipsis;
 }
 .kpi-s {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-soft);
 }
 /* Grid ------------------------------------------------------------------ */
@@ -581,7 +609,7 @@ html[data-theme="dark"] .card-hero {
   place-items: center;
   height: 100%;
   color: var(--ink-soft);
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   text-align: center;
   padding: 12px;
 }
@@ -590,7 +618,7 @@ html[data-theme="dark"] .card-hero {
   flex-wrap: wrap;
   gap: 6px 16px;
   margin-bottom: 6px;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--ink-soft);
 }
 .legend i {
@@ -615,12 +643,12 @@ html[data-theme="dark"] .card-hero {
   min-width: 0;
 }
 .compare-k {
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--ink-soft);
 }
 .compare-v {
   font-family: var(--font-mono);
-  font-size: 40px;
+  font-size: var(--fs-display);
   font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.02em;
@@ -628,13 +656,13 @@ html[data-theme="dark"] .card-hero {
 }
 .compare-v small {
   margin-left: 3px;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 500;
   color: var(--ink-soft);
 }
 .compare-s {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-soft);
 }
 /* Rumus asal angka: jumlah menit dibagi jumlah entri. */
@@ -646,7 +674,7 @@ html[data-theme="dark"] .card-hero {
   border-radius: var(--r-sm);
   background: var(--surface-2);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-soft);
   align-self: flex-start;
 }
@@ -677,11 +705,11 @@ html[data-theme="dark"] .card-hero {
 }
 .delta-big {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: var(--fs-lg);
   font-weight: 600;
 }
 .delta-sub {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-soft);
 }
 .compare-delta.down .delta-big {
@@ -694,7 +722,7 @@ html[data-theme="dark"] .card-hero {
   grid-column: 1 / -1;
   padding-top: 10px;
   border-top: 1px dashed var(--line);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-soft);
   line-height: 1.5;
 }
@@ -709,7 +737,7 @@ html[data-theme="dark"] .card-hero {
 .tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .tbl th,
 .tbl td {
@@ -719,7 +747,7 @@ html[data-theme="dark"] .card-hero {
   white-space: nowrap;
 }
 .tbl th {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -730,7 +758,7 @@ html[data-theme="dark"] .card-hero {
 .tbl th.num {
   text-align: right;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 .tbl tbody tr:hover {
   background: var(--surface-2);
@@ -743,7 +771,7 @@ html[data-theme="dark"] .card-hero {
   border-bottom: 0;
   font-weight: 600;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   background: var(--surface-2);
 }
 .tbl .name-cell {
@@ -753,7 +781,7 @@ html[data-theme="dark"] .card-hero {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.02em;
   border: 1px solid transparent;
@@ -773,7 +801,7 @@ html[data-theme="dark"] .card-hero {
   text-align: center;
   padding: 18px;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .state:empty {
   display: none;
@@ -793,88 +821,9 @@ html[data-theme="dark"] .card-hero {
   width: 100%;
   overflow-x: auto;
 }
-.tbl {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-.tbl th,
-.tbl td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
-  white-space: nowrap;
-}
-.tbl th {
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  border-bottom-color: var(--line-strong);
-}
-.tbl td.num,
-.tbl th.num {
-  text-align: right;
-  font-family: var(--font-mono);
-  font-size: 13px;
-}
-.tbl tbody tr:hover {
-  background: var(--surface-2);
-}
-.tbl tbody tr:last-child td {
-  border-bottom: 0;
-}
-.tbl tfoot td {
-  border-top: 2px solid var(--line-strong);
-  border-bottom: 0;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  background: var(--surface-2);
-}
-.tbl .name-cell {
-  font-weight: 500;
-}
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  border: 1px solid transparent;
-}
-.badge-app {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  border-color: var(--accent);
-}
-.badge-manual {
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  border-color: var(--line-strong);
-}
-/* States ---------------------------------------------------------------- */
-.state {
-  text-align: center;
-  padding: 18px;
-  color: var(--ink-soft);
-  font-size: 14px;
-}
-.state:empty {
-  display: none;
-}
-.state-error {
-  color: var(--err);
-}
-.state .btn {
-  margin-top: 12px;
-}
-/* Footer ---------------------------------------------------------------- */
 .foot {
   padding-block: 18px 28px;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--ink-soft);
   font-family: var(--font-mono);
 }
@@ -910,24 +859,24 @@ html[data-theme="dark"] .card-hero {
     height: 260px;
   }
   .brand-text h1 {
-    font-size: 18px;
+    font-size: var(--fs-xl);
   }
   .mh-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
   .mh-sentence {
-    font-size: 17px;
+    font-size: var(--fs-lg);
   }
   .mh-row {
     grid-template-columns: 72px 1fr;
-    font-size: 12px;
+    font-size: var(--fs-xs);
   }
   .compare {
     grid-template-columns: 1fr;
     gap: 14px;
   }
   .compare-v {
-    font-size: 32px;
+    font-size: calc(var(--fs-display) * 0.8);
   }
   .compare-delta {
     align-self: flex-start;

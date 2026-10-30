@@ -361,7 +361,7 @@ function fmtDecimal(n) {
       var yy = y(v);
       parts.push('<line x1="' + padL + '" x2="' + (padL + iw) + '" y1="' + yy + '" y2="' + yy +
         '" stroke="' + pal.grid + '" stroke-width="1"/>');
-      parts.push('<text x="' + (padL - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">' +
+      parts.push('<text x="' + (padL - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="12" fill="currentColor" opacity=".6">' +
         esc(fmtAxis(v)) + "</text>");
     }
 
@@ -381,11 +381,11 @@ function fmtDecimal(n) {
           (ih * x.p2 / top) + '" rx="2" fill="' + pal.p2 + '"/>');
       }
       if (band > 36 && total > 0) {
-        parts.push('<text x="' + cx + '" y="' + (y(total) - 6) + '" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".7">' +
+        parts.push('<text x="' + cx + '" y="' + (y(total) - 6) + '" text-anchor="middle" font-size="12" fill="currentColor" opacity=".7">' +
           esc(fmtAxis(total)) + "</text>");
       }
       if (i % labelStep === 0) {
-        parts.push('<text x="' + cx + '" y="' + (padT + ih + 18) + '" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">' +
+        parts.push('<text x="' + cx + '" y="' + (padT + ih + 18) + '" text-anchor="middle" font-size="12" fill="currentColor" opacity=".65">' +
           esc(shortDate(x.d)) + "</text>");
       }
       parts.push('<rect x="' + (padL + band * i) + '" y="' + padT + '" width="' + band + '" height="' + ih +
@@ -439,9 +439,9 @@ function fmtDecimal(n) {
     }).join("");
 
     var center =
-      '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="19" font-weight="500" fill="currentColor">' +
+      '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="20" font-weight="500" fill="currentColor">' +
       esc(fmtDuration(total)) + "</text>" +
-      '<text x="' + cx + '" y="' + (cy + 17) + '" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">total durasi</text>';
+      '<text x="' + cx + '" y="' + (cy + 17) + '" text-anchor="middle" font-size="12" fill="currentColor" opacity=".6">total durasi</text>';
 
     host.innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H +
       '" role="img" aria-label="Komposisi proses">' + arcs + center + "</svg>" +
@@ -479,7 +479,7 @@ function fmtDecimal(n) {
       parts.push('<rect x="' + labelW + '" y="' + (cy - 7) + '" width="' + barMax + '" height="14" rx="3" fill="currentColor" opacity=".07"/>');
       parts.push('<rect x="' + labelW + '" y="' + (cy - 7) + '" width="' + w + '" height="14" rx="3" fill="' + color + '">' +
         "<title>" + esc(it.label + ": " + it.tooltip) + "</title></rect>");
-      parts.push('<text x="' + (W - 2) + '" y="' + (cy + 4) + '" text-anchor="end" font-size="11.5" fill="currentColor" opacity=".8">' +
+      parts.push('<text x="' + (W - 2) + '" y="' + (cy + 4) + '" text-anchor="end" font-size="12" fill="currentColor" opacity=".8">' +
         esc(unitFmt(it.value)) + "</text>");
     });
 
@@ -548,7 +548,8 @@ function blok(label, g, cls) {
         rumus +
         '<span class="compare-s">' + fmtNumber(b.entri) + " entri · " + fmtNumber(b.line) +
         " line · " + tip(fmtDuration(b.menit), noteDurasi(b.menit), b.cls === "app") + "</span>" +
-        '<span class="compare-s">rata-rata per entri ' + tip(num2(b.avgMenit) + " menit", noteAvg(b.menit, b.entri), b.cls === "app") +
+        '<span class="compare-s">rata-rata entri ' + (b.cls === "app" ? "aplikasi" : "manual") + " " +
+        tip(num2(b.avgMenit) + " menit", noteAvg(b.menit, b.entri), b.cls === "app") +
         " · P1 " + esc(fmtDuration(b.avgP1)) + " · P2 " + esc(fmtDuration(b.avgP2)) + "</span>" +
         '<div class="compare-track"><div class="compare-fill" style="width:' + pct +
         "%;background:" + (b.cls === "app" ? "var(--accent)" : "var(--muted-bar)") + '"></div></div>' +
@@ -608,17 +609,11 @@ function blok(label, g, cls) {
 
     var menMan = sum(man, "d1_menit") + sum(man, "d2_menit");
     var menApp = sum(app, "d1_menit") + sum(app, "d2_menit");
-    var lineMan = sum(man, "jumlah_line");
-    var lineApp = sum(app, "jumlah_line");
 
     var jamMan = menMan / 60 / nMan;
     var jamApp = menApp / 60 / nApp;
     var hematJam = jamMan - jamApp;
     var hematMenit = hematJam * 60;
-
-    var per1000Man = lineMan ? (menMan / 60) / lineMan * 1000 : 0;
-    var per1000App = lineApp ? (menApp / 60) / lineApp * 1000 : 0;
-    var hemat1000 = (per1000Man - per1000App) * 60;
 
     var setahun = hematJam * 240;
 
@@ -638,9 +633,8 @@ function blok(label, g, cls) {
       num2(jamMan) + " − " + num2(jamApp) + " = <strong>" + num2(hematJam) +
       " jam/hari = " + fmtMinutes(hematMenit) + "</strong></span></div>";
 
-    el.mhDays.textContent = nMan + " vs " + nApp + " hari";
+    el.mhDays.textContent = nMan + " berbanding " + nApp + " hari";
     el.mhPerDay.textContent = fmtMinutes(hematMenit);
-    el.mhPer1000.textContent = fmtMinutes(hemat1000);
     el.mhYear.textContent = fmtNumber(Math.round(setahun)) + " jam (" + num2(setahun / 8) + " hari kerja)";
 
     if (hematJam <= 0.005) {
@@ -682,11 +676,11 @@ function blok(label, g, cls) {
     el.kOrang.textContent = fmtNumber(nOrang);
     el.kOrangSub.textContent = nOrang === 1 ? "1 orang" : nOrang + " orang";
 
-    el.kAvg.textContent = rows.length ? fmtDuration(menit / rows.length) : "-";
-    el.kAvgSub.textContent = rows.length ? fmtNumber(Math.round(line / rows.length)) + " line" : "-";
+el.kAvg.textContent = rows.length ? fmtDuration(menit / rows.length) : "-";
+    el.kAvgSub.textContent = rows.length ? "dari " + fmtNumber(rows.length) + " entri" : "-";
 
     el.kRate.textContent = menit > 0 ? fmtNumber(Math.round(line / (menit / 60))) : "-";
-    el.kRateSub.textContent = "line per jam";
+    el.kRateSub.textContent = "line/jam semua data";
   }
 
   /* ---- tabel ----------------------------------------------------------- */
@@ -857,7 +851,7 @@ renderCompare();
       "kpis", "kEntri", "kEntriSub", "kLine", "kLineSub", "kDur", "kDurSub",
       "kOrang", "kOrangSub", "kAvg", "kAvgSub", "kRate", "kRateSub",
       "grid", "chartDaily", "chartDonut", "chartPerson", "chartLine",
-      "compareCard", "compareBox", "manHourCard", "mhSentence", "mhCalc", "mhGrid", "mhDays", "mhPerDay", "mhPer1000", "mhYear", "tblPersonBody", "tblPersonFoot", "tblDateBody", "tblDateFoot",
+      "compareCard", "compareBox", "manHourCard", "mhSentence", "mhCalc", "mhGrid", "mhDays", "mhPerDay", "mhYear", "tblPersonBody", "tblPersonFoot", "tblDateBody", "tblDateFoot",
       "mainState", "footStore", "footTime"
     ].forEach(function (id) { el[id] = document.getElementById(id); });
   }

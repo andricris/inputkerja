@@ -449,6 +449,9 @@
 
     el.stats.hidden = all.length === 0 || !!state.error;
     el.statCount.textContent = fmtNumber(real.length);
+    el.statCountSub.textContent = built.missing
+      ? fmtNumber(built.missing) + " belum diisi"
+      : "";
     el.statLine.textContent = fmtNumber(sumOf(real, "jumlah_line"));
     el.statDur.textContent = fmtDuration(sumOf(real, "total_menit"));
 
@@ -808,7 +811,7 @@
       "d1_mulai", "d1_selesai", "d1_dur", "d2_mulai", "d2_selesai", "d2_dur",
       "formError", "totalPreview", "submitBtn",
       "editBanner", "editBannerText", "editCancel",
-      "rekapMeta", "stats", "statCount", "statLine", "statDur",
+      "rekapMeta", "stats", "statCount", "statCountSub", "statLine", "statDur",
       "filterFrom", "filterTo", "filterQ", "resetFilter", "exportBtn", "showMissing",
       "tableStates", "tableWrap", "dataBody", "dataFoot", "footStore"
     ].forEach(function (id) { el[id] = document.getElementById(id); });

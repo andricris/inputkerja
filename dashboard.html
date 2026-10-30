@@ -71,19 +71,20 @@
       </div>
     </div>
     <p class="filter-note" id="filterNote"></p>
+    <p class="filter-note" id="boundaryNote">Sebelum 19/10/2026 memakai input manual; sejak 19/10/2026 memakai aplikasi.</p>
   </section>
 
   <section class="card card-hero compare-card" id="compareCard" aria-labelledby="compareTitle">
     <div class="card-head">
-      <h2 id="compareTitle">Waktu per line: manual vs aplikasi</h2>
-      <span class="card-sub">detik per line, sebelum dan sesudah 19/10/2026</span>
+      <h2 id="compareTitle">Waktu per line: sebelum dan sesudah aplikasi</h2>
+      <span class="card-sub">detik per line</span>
     </div>
     <div id="compareBox" class="compare"></div>
   </section>
 
   <section class="card mh-card" id="manHourCard" aria-labelledby="mhTitle">
     <div class="card-head">
-      <h2 id="mhTitle">Saving man-hour</h2>
+      <h2 id="mhTitle">Penghematan jam kerja</h2>
       <span class="card-sub">dihitung dari data yang sedang tampil</span>
     </div>
     <p class="mh-sentence" id="mhSentence"></p>
@@ -94,12 +95,8 @@
         <span class="mh-v" id="mhDays">–</span>
       </div>
       <div class="mh-stat">
-        <span class="mh-k">Hemat per hari kerja</span>
+        <span class="mh-k">Hemat per hari kerja tim</span>
         <span class="mh-v" id="mhPerDay">–</span>
-      </div>
-      <div class="mh-stat">
-        <span class="mh-k">Hemat per 1.000 line</span>
-        <span class="mh-v" id="mhPer1000">–</span>
       </div>
       <div class="mh-stat">
         <span class="mh-k">Proyeksi 1 tahun (240 hari kerja)</span>
@@ -130,7 +127,7 @@
       <span class="kpi-s" id="kOrangSub">&nbsp;</span>
     </div>
     <div class="kpi">
-      <span class="kpi-k">Rata-rata / entri</span>
+      <span class="kpi-k">Rata-rata semua entri</span>
       <span class="kpi-v" id="kAvg">–</span>
       <span class="kpi-s" id="kAvgSub">&nbsp;</span>
     </div>
@@ -145,7 +142,7 @@
 
     <article class="card span4">
       <div class="card-head">
-        <h2>Durasi per tanggal, Proses 1 vs Proses 2</h2>
+        <h2>Durasi per tanggal: Proses 1 dan Proses 2</h2>
         <span class="card-sub">menit</span>
       </div>
       <div class="chart" id="chartDaily" role="img" aria-label="Grafik durasi harian"></div>
@@ -188,7 +185,7 @@
               <th scope="col" class="num">Entri</th>
               <th scope="col" class="num">Line</th>
               <th scope="col" class="num">Durasi</th>
-              <th scope="col" class="num">Rata-rata</th>
+              <th scope="col" class="num">Rata-rata/entri</th>
               <th scope="col" class="num">Line/entri</th>
               <th scope="col" class="num">Line/jam</th>
             </tr>
